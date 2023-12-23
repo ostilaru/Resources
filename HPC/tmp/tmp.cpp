@@ -2,12 +2,17 @@
 #include <iostream>
 using namespace std;
 
+struct Base1 { int x; };
+struct Base2 { float y; };
+struct Derived : Base1, Base2 { };
+
 int main() {
-    char myString[] = "Hello, World!";
-    string myString2("Hello, World!");
-    size_t length = strlen(myString);
-    std::cout << "The length of the string is " << length << std::endl;
-    cout << myString2.length() << endl;
-    // 'length' 现在包含 "Hello, World!" 字符串的长度，不包括末尾的 '\0'
+    Derived *pd = new Derived;
+    pd->x = 1; pd->y = 2.0f;
+    Derived *pv = pd;
+    Base2 *pb2 = static_cast<Base2*>(pv);
+    // Base2 *pb2 = pd;
+    cout << pd->y << " " << pb2->y << endl;
+    delete pb2;
     return 0;
 }
