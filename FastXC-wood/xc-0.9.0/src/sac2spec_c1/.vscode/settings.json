@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "complex.h": "c",
+        "design_filter_response.h": "c"
+    }
+}
