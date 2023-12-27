@@ -1,7 +1,7 @@
 #include<iostream>
 #include<chrono>
 
-const int matrixSize = 1024 * 4;
+const int matrixSize = 256 * 4;
 
 void matrixMultiplicationCPU(int *a, int *b, int *c) {
     for (int i = 0; i < matrixSize; ++i) {
@@ -30,6 +30,7 @@ int main() {
     auto start = std::chrono::high_resolution_clock::now();
 
     // ---------------------------------------------------------------
+    std::cout << "Calculating matrix multiplication on CPU..." << std::endl;
     // 调用CPU上的核函数
     matrixMultiplicationCPU(host_a, host_b, host_c);
 
@@ -37,6 +38,14 @@ int main() {
     // 计时结束
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+
+    // 打印结果
+    for(int i = 0; i < matrixSize; ++i) {
+        for(int j = 0; j < matrixSize; ++j) {
+            std::cout << host_c[i * matrixSize + j] << " ";
+        }
+        std::cout << std::endl;
+    }
 
     // 打印计算时间
     std::cout << "CPU calculation time: " << duration.count() << " milliseconds" << std::endl;

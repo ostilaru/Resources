@@ -79,6 +79,13 @@ int main() {
     float millisecondsGPU = 0;
     cudaEventElapsedTime(&millisecondsGPU, startGPU, stopGPU);
 
+    // 打印结果
+    // std::cout << "Result: " << std::endl;
+    // for(int i = 0; i < arraySize; i++) {
+    //     std::cout << host_c[i] << " ";
+    // }
+    // std::cout << std::endl;
+
     std::cout << "Total time: " << millisecondsTotal << " milliseconds" << std::endl;
     std::cout << "GPU calculation time: " << millisecondsGPU << " milliseconds" << std::endl;
 
@@ -89,6 +96,6 @@ int main() {
     delete[] host_a;
     delete[] host_b;
     delete[] host_c;
-
+ 
     return 0;
 }

@@ -13,6 +13,5 @@ int main() {
     Base2 *pb2 = static_cast<Base2*>(pv);
     // Base2 *pb2 = pd;
     cout << pd->y << " " << pb2->y << endl;
-    delete pb2;
     return 0;
 }
