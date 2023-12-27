@@ -104,8 +104,6 @@ def gen_sac2spec_cmd(command_dict: Dict, xc_param: Dict) -> List[str]:
     return cmd_list
 
 # generate cross correlation terminal cmd
-
-
 def gen_xc_cmd(command_dict: Dict, xc_param: Dict, seis_array2: Dict) -> List[str]:
     output_dir = xc_param['output_dir']
     xc_list_dir = os.path.join(output_dir, 'xc_list')
@@ -162,8 +160,6 @@ def gen_xc_cmd(command_dict: Dict, xc_param: Dict, seis_array2: Dict) -> List[st
     return cmd_list
 
 # generate terminal stack cmd
-
-
 def gen_stack_cmd(command_dict: Dict, xc_param: Dict) -> List[str]:
     """
     Generate commands for stack
@@ -203,8 +199,6 @@ def gen_stack_cmd(command_dict: Dict, xc_param: Dict) -> List[str]:
     return cmd_list
 
 # generate terminal rotate cmd
-
-
 def gen_rotate_cmd(command_dict: Dict, xc_param: Dict) -> List[str]:
     cmd_list = []
     output_dir = xc_param['output_dir']

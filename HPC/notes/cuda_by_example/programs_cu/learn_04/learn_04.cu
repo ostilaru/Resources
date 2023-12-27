@@ -1,7 +1,7 @@
 #include<iostream>
 #include<cuda_runtime.h>
 
-const int matrixSize = 1024 * 32;
+const int matrixSize = 1024 * 36;
 
 __global__ void matrixMultiplication(int *a, int *b, int *c) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
