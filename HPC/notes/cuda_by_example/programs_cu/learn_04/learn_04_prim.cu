@@ -4,33 +4,46 @@
 
 const int matrixSize = 1024 * 40;
 
+// __global__ void matrixMultiplication(uint8_t *a, uint8_t *b, uint8_t *c) {
+//     int tx = threadIdx.x;
+//     int ty = threadIdx.y;
+//     int bx = blockIdx.x;
+//     int by = blockIdx.y;
+
+//     int row = by * blockDim.y + ty;
+//     int col = bx * blockDim.x + tx;
+
+//     __shared__ uint8_t shared_a[32][32];
+//     __shared__ uint8_t shared_b[32][32];
+
+//     int sum = 0;
+
+//     for (int i = 0; i < matrixSize / 32; ++i) {
+//         shared_a[ty][tx] = a[row * matrixSize + i * 32 + tx];
+//         shared_b[ty][tx] = b[(i * 32 + ty) * matrixSize + col];
+//         __syncthreads();
+
+//         for (int k = 0; k < 32; ++k) {
+//             sum += shared_a[ty][k] * shared_b[k][tx];
+//         }
+//         __syncthreads();
+//     }
+
+//     if (row < matrixSize && col < matrixSize) {
+//         c[row * matrixSize + col] = static_cast<uint8_t>(sum);
+//     }
+// }
+
 __global__ void matrixMultiplication(uint8_t *a, uint8_t *b, uint8_t *c) {
-    int tx = threadIdx.x;
-    int ty = threadIdx.y;
-    int bx = blockIdx.x;
-    int by = blockIdx.y;
-
-    int row = by * blockDim.y + ty;
-    int col = bx * blockDim.x + tx;
-
-    __shared__ uint8_t shared_a[32][32];
-    __shared__ uint8_t shared_b[32][32];
-
-    int sum = 0;
-
-    for (int i = 0; i < matrixSize / 32; ++i) {
-        shared_a[ty][tx] = a[row * matrixSize + i * 32 + tx];
-        shared_b[ty][tx] = b[(i * 32 + ty) * matrixSize + col];
-        __syncthreads();
-
-        for (int k = 0; k < 32; ++k) {
-            sum += shared_a[ty][k] * shared_b[k][tx];
-        }
-        __syncthreads();
-    }
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (row < matrixSize && col < matrixSize) {
-        c[row * matrixSize + col] = static_cast<uint8_t>(sum);
+        uint8_t sum = 0;
+        for (int k = 0; k < matrixSize; ++k) {
+            sum += a[row * matrixSize + k] * b[k * matrixSize + col];
+        }
+        c[row * matrixSize + col] = sum;
     }
 }
 
