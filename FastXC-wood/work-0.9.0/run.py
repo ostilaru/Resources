@@ -32,3 +32,4 @@ job.deploy_stack_cmd()
 if job.generate_rotate_list_dir():
     job.generate_rotate_cmd()
     job.deploy_rotate_cmd()
+ 

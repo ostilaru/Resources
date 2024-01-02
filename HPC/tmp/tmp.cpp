@@ -13,5 +13,8 @@ int main() {
     Base2 *pb2 = static_cast<Base2*>(pv);
     // Base2 *pb2 = pd;
     cout << pd->y << " " << pb2->y << endl;
+    // int a = 1, b = 2, c = 3;
+    // int tmp = a^b&(-c);
+    // std::cout << tmp << std::endl;
     return 0;
 }

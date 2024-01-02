@@ -37,12 +37,14 @@ typedef struct
 
 void *writethrd(void *arg)
 {
+  // Initializes timespec
   struct timespec req, rem;
   req.tv_sec = 0;
   req.tv_nsec = 1000;
   rem.tv_sec = 0;
   rem.tv_nsec = 0;
 
+  // Get the parameters
   size_t writecnt = 0;
   SHAREDITEM *pItem = (SHAREDITEM *)arg;
 
@@ -54,14 +56,17 @@ void *writethrd(void *arg)
   totalload = g_totalload;
   pthread_mutex_unlock(&g_paramlock);
 
+  // Loop write file, control the number of times the thread executes
   while (writecnt < batchload)
   {
     for (size_t i = 0; i < totalload; i++)
     {
       SHAREDITEM *ptr = pItem + i;
       pthread_mutex_lock(&(ptr->mtx));
+      // The status of the shared item is not written
       if (ptr->valid == 0)
       {
+        // `write_sac` function is used to write the SACHEAD and data of the SAC file to the file
         if (write_sac(ptr->fname, *(ptr->phead), ptr->pdata) != 0)
         {
           fprintf(stderr, "ERROR Write output NCF %s error\n", ptr->fname);
@@ -83,6 +88,7 @@ void *writethrd(void *arg)
 
 int main(int argc, char **argv)
 {
+  // Parse cmd arguments
   ARGUTYPE argument;
   ArgumentProcess(argc, argv, &argument);
   ARGUTYPE *parg = &argument;
@@ -105,6 +111,7 @@ int main(int argc, char **argv)
 
   SEGSPEC spechead;
   read_spechead(SpecPaths->paths[0], &spechead);
+  // parameters required for cross correlation
   int nspec = spechead.nspec;
   int nstep = spechead.nstep;
   float delta = spechead.dt;
