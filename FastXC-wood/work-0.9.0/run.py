@@ -1,6 +1,6 @@
 from fastxc.fastxc import FastXC
 
-ini_file = './config_hinet.ini'
+ini_file = '/home/woodwood/hpc/Resources/FastXC-wood/work-0.9.0/config_hinet.ini'
 
 job = FastXC(ini_file)
 

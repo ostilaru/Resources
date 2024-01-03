@@ -17,7 +17,7 @@ typedef struct ARGUTYPE
 } ARGUTYPE;
 ```
 *****
-
+ 
 #### 2. `cal_dist`：计算地球上两点之间的距离和方位角
 ```cpp
 void distkm_az_baz_Rudoe(double evlo,double evla,double stlo,double stla,double *gcarc,double *az,double* baz,double *distkm)

@@ -2,19 +2,34 @@
 #include <iostream>
 using namespace std;
 
-struct Base1 { int x; };
-struct Base2 { float y; };
-struct Derived : Base1, Base2 { };
+class Mammal {
+public:
+    Mammal(int h = 0) : h(h) {}
+    virtual void print() {
+        cout << h;
+    }
+    virtual int getH() { return h; }
+private:
+    int h;
+};
+
+class Human : public Mammal {
+public:
+    Human(int h = 0) : h(h), Mammal(h/2) {}
+    virtual void print() {
+        Mammal* mthis = this;
+        cout << mthis->getH();
+        Mammal::print();
+    }
+    virtual int getH() { return h; }
+private:
+    int h;
+};
 
 int main() {
-    Derived *pd = new Derived;
-    pd->x = 1; pd->y = 2.0f;
-    Derived *pv = pd;
-    Base2 *pb2 = static_cast<Base2*>(pv);
-    // Base2 *pb2 = pd;
-    cout << pd->y << " " << pb2->y << endl;
-    // int a = 1, b = 2, c = 3;
-    // int tmp = a^b&(-c);
-    // std::cout << tmp << std::endl;
+    Human man(2);
+    Mammal* mmal = &man;
+    mmal->print();
+    man.print();
     return 0;
 }

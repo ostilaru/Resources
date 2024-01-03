@@ -1,0 +1,14 @@
+README.md
+setup.cfg
+setup.py
+SeisHandler/__init__.py
+SeisHandler/pattern_utils.py
+SeisHandler/seis_array.py
+SeisHandler/seisfile_filter.py
+SeisHandler/seisfile_matcher.py
+SeisHandler/seisfile_organizer.py
+SeisHandler.egg-info/PKG-INFO
+SeisHandler.egg-info/SOURCES.txt
+SeisHandler.egg-info/dependency_links.txt
+SeisHandler.egg-info/requires.txt
+SeisHandler.egg-info/top_level.txt

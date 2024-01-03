@@ -98,6 +98,7 @@ def sac2spec_cmd_deployer(xc_param: Dict, executing: Dict):
     else:
         # serial execution
         for cmd in cmds:
+            print(cmd)  # test -- woodwood
             run_or_print_cmd(cmd, debug, logger)
 
     # Set the event to signal the thread to stop

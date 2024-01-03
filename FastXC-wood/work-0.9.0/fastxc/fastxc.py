@@ -25,7 +25,9 @@ class FastXC:
             self.seis_array_1, self.seis_array_2, self.parameters, self.mem_info)
 
     def generate_sac2spec_cmd(self):
-        gen_sac2spec_cmd(self.command, self.parameters)
+        # test -- woodwood
+        cmds = gen_sac2spec_cmd(self.command, self.parameters)
+        return cmds
 
     def deploy_sac2spec_cmd(self):
         sac2spec_cmd_deployer(self.parameters, self.executing)
