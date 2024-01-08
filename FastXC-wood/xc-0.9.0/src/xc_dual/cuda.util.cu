@@ -2,6 +2,7 @@
 
 const float RAMUPPERBOUND = 0.9;
 
+// NOTE: DimCompute: BLOCKX = 32, BLOCKY = 32
 void DimCompute(dim3 *pdimgrd, dim3 *pdimblk, size_t width, size_t height) {
   pdimblk->x = BLOCKX;
   pdimblk->y = BLOCKY;

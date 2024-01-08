@@ -29,6 +29,10 @@ int main(int argc, char **argv)
 
   FilePaths *ncfPathsRaw = read_sac_lst(sac_lst);
   size_t ncf_num_raw = ncfPathsRaw->count;
+
+  // tag: for debug, check ncf_num_raw
+  printf("[INFO]: ncf_num_raw: %ld\n", ncf_num_raw);
+
   if (ncf_num_raw == 0)
   {
     fprintf(stderr, "ERROR: No sac files in %s\n", sac_lst);
@@ -41,6 +45,9 @@ int main(int argc, char **argv)
     fprintf(stderr, "ERROR: No sac files with npts > 0 in %s\n", sac_lst);
     return -1;
   }
+
+  // tag: for debug, check ncf_num_raw
+  printf("[INFO]: ncf_num: %ld\n", ncf_num);
 
   SACHEAD template_hd = sac_null, infilehd = sac_null;
 
@@ -61,7 +68,7 @@ int main(int argc, char **argv)
   char template_path[256]; // Adjust the size as needed
   strcpy(template_path, original_path);
 
-  char *base_name = basename(template_path);
+  char *base_name = basename(template_path);  // NOTE: basename(): extract filename from path
 
   /* Extract the required fields */
   char *fields[5];
@@ -73,16 +80,24 @@ int main(int argc, char **argv)
     token = strtok(NULL, ".");
   }
 
+  // NOTE: filename's 1st part is sta-pair, 2nd part is component-pair
+  // example: AAKH-ABNH.U-U.sac
   char *sta_pair = fields[0];
   char *component_pair = fields[1];
 
   char *rest = sta_pair;
   char *saveptr;
 
+  // tag: for debug, check for rest, rest: AAKH-ABNH
+  printf("[INFO]: rest: %s\n", rest);
+
   token = strtok_r(rest, "-", &saveptr);
   char *kevnm = strtok(sta_pair, "-");
   rest = NULL;
   char *kstnm = strtok_r(rest, "-", &saveptr);
+
+  // tag: for debug, check for kevnm, kstnm = AAKH, ABNH
+  printf("[INFO]: kevnm: %s, kstnm: %s\n", kevnm, kstnm);
 
   /* Write fields to the sac header */
   strncpy(template_hd.kstnm, kstnm, K_LEN_8);
@@ -92,6 +107,9 @@ int main(int argc, char **argv)
   /* take the 1st file's header as the output headr */
   int npts = template_hd.npts;
   SACHEAD hdstack = template_hd;
+
+  // tag: for debug, check for npts
+  printf("[INFO]: npts: %d\n", npts);
 
   /* change the reference time nzyear nzjday nzhour nzmin nzsec nzmsec */
   hdstack.nzyear = 2010;

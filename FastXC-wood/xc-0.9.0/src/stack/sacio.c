@@ -577,6 +577,7 @@ float *read_sac2(const char *name,
         12/06/96	Lupei Zhu	swap byte-order on PC
 ************************************************************/
 
+// NOTE: read_sac_buffer
 float *read_sac_buffer(const char *name, SACHEAD *hd, float *buffer)
 {
   FILE *strm;

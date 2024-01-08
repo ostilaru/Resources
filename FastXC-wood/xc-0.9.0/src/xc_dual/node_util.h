@@ -9,10 +9,12 @@
 
 typedef struct FilePaths
 {
+    // NOTE: **paths is 2D array, each row is a path
     char **paths;
     int count;
 } FilePaths;
 
+// NOTE: STANODE is used to store the station information
 typedef struct SPECNODE
 {
     int valid;
@@ -21,6 +23,7 @@ typedef struct SPECNODE
     complex *pdata;
 } SPECNODE;
 
+// NOTE: PAIRNODE is used to store the pair of SAC files
 typedef struct PAIRNODE
 {
     size_t srcidx;
