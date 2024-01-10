@@ -59,5 +59,6 @@
     "typeinfo": "cpp",
     "__nullptr": "cpp",
     "gen_ccfpath.h": "c"
-  }
+  },
+  "todo-tree.tree.showBadges": true
 }

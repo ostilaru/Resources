@@ -60,8 +60,6 @@ void CpuMalloc(void **pptr, size_t sz)
     perror("Malloc cpu memory");
     exit(-1);
   }
-  // tag: for debug
-  printf("CpuMalloc successful: %p\n", *pptr);
 }
 
 void CpuCalloc(void **pptr, size_t sz)

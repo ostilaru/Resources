@@ -277,14 +277,9 @@ int main(int argc, char **argv)
   // reading data from filenode_list to speclist.pdata
   // spec.pdata has already been mapped to srcBuffer/staBuffer
 
-  // tag: for debug, check if run here
-  printf("[INFO]: already init src spectrum node!\n");
-
   GenSpecArray(pSrcPaths, pSpecSrcList);
   GenSpecArray(pStaPaths, pSpecStaList);
 
-  // tag: for debug, check if run here
-  printf("[INFO]: already finish GenSpecArray()!\n");
 
   // DONE: GeneratePair_dual() need to be fixed, add filenameDate cmp
   size_t paircnt = GeneratePair_dual(pPairList, pSpecSrcList, srccnt, pSpecStaList, stacnt);
@@ -320,7 +315,7 @@ int main(int argc, char **argv)
 
   // TODO: now we need stack process after xc, so we need more CPU memory
   // ---------------------------stack memory-------------------------------------------
-  SACHEAD template_hd = sac_null, infilehd = sac_null;
+  SACHEAD template_hd = sac_null;
 
   size_t nstack = 0;
   size_t k = 0;
@@ -493,8 +488,8 @@ int main(int argc, char **argv)
     pthread_mutex_unlock(&g_paramlock); // unlock
 
     // FIXME: here create a new thread for write sac file
-    pthread_t tid;
-    pthread_create(&tid, NULL, writethrd, (void *)pItem);
+    // pthread_t tid;
+    // pthread_create(&tid, NULL, writethrd, (void *)pItem);
 
     // Launch GPU processing
     for (size_t d_finishcnt = 0; d_finishcnt < h_proccnt; d_finishcnt += d_batch)
@@ -541,10 +536,11 @@ int main(int argc, char **argv)
         pthread_mutex_lock(&(ptr->mtx));
         if (ptr->valid == -1)
         {
-          GenCCFPath(ptr->fname,
-                     pSpecSrcList[(pPairList + globalidx)->srcidx].filepath,
-                     pSpecStaList[(pPairList + globalidx)->staidx].filepath,
-                     ncf_dir);
+          // tag: now not create ncf dir
+          // GenCCFPath(ptr->fname,
+          //            pSpecSrcList[(pPairList + globalidx)->srcidx].filepath,
+          //            pSpecStaList[(pPairList + globalidx)->staidx].filepath,
+          //            ncf_dir);
 
           ptr->phead = &((pPairList + globalidx)->headncf);
           ptr->pdata = ncf_buffer + (d_finishcnt + i) * nfft + nspec - nhalfcc - 1;
@@ -556,11 +552,15 @@ int main(int argc, char **argv)
 
     }
 
-    pthread_join(tid, NULL);
+    // pthread_join(tid, NULL);
   }
 
   // TODO: stack process
   // -----------------------------------------------------------------------------
+  // tag: start stack time
+  struct timespec start_stack_time, end_stack_time;
+  clock_gettime(CLOCK_MONOTONIC, &start_stack_time);
+
   for (size_t i = 0; i < ncf_num; i++) {
     for (k = 0; k < npts; k++) {
       stackcc[k] = stackcc[k] + pItem[i].pdata[k];
@@ -578,6 +578,12 @@ int main(int argc, char **argv)
       stackcc[k] /= ncf_num;
     }
   }
+
+  // tag: end stack time
+  clock_gettime(CLOCK_MONOTONIC, &end_stack_time);
+  double elapsed_stack_time = (end_stack_time.tv_sec - start_stack_time.tv_sec) +
+                      (end_stack_time.tv_nsec - start_stack_time.tv_nsec) / 1e9;
+  printf("[INFO]: Elapsed stack time: %.6f seconds\n", elapsed_stack_time);
 
   hdstack.unused27 = nstack;
   char *out_sac = "/home/woodwood/hpc/station_2/ncf_hinet_AAKH_ABNH/stack/AAKH-ABNH/AAKH-ABNH.U-U.sac";
