@@ -188,6 +188,8 @@ int main(int argc, char **argv)
   float cclength = parg->cclength;
   char *ncf_dir = parg->ncf_dir;
   int gpu_id = parg->gpu_id;
+  // TODO: add parameter for output stack path
+  char *stack_dir = parg->stack_dir;
   CUDACHECK(cudaSetDevice(gpu_id));
 
   // Generate list of input src/sta spectrum
@@ -195,7 +197,7 @@ int main(int argc, char **argv)
   FilePaths *pSrcPaths = read_spec_lst(parg->src_spectrum_lst);
   FilePaths *pStaPaths = read_spec_lst(parg->sta_spectrum_lst);
   
-  size_t srccnt = pSrcPaths->count;
+  size_t srccnt = pSrcPaths->count;   
   size_t stacnt = pStaPaths->count;
 
   SEGSPEC spechead;
@@ -330,6 +332,7 @@ int main(int argc, char **argv)
   char template_path[256];
   strcpy(template_path, ncf_filepath);
   char *base_name = basename(template_path); 
+  char *base_name_copy = strdup(base_name);
 
   /* Extract the required fields */
   char *fields[5];
@@ -397,6 +400,9 @@ int main(int argc, char **argv)
   {
     stackcc[k] = 0.0;
   }
+
+  // NOTE: create stack dir
+  char *out_sac = createFilePath(stack_dir, sta_pair, base_name_copy);
 
   // ---------------------------stack memory-------------------------------------------
   
@@ -586,8 +592,12 @@ int main(int argc, char **argv)
   printf("[INFO]: Elapsed stack time: %.6f seconds\n", elapsed_stack_time);
 
   hdstack.unused27 = nstack;
-  char *out_sac = "/home/woodwood/hpc/station_2/ncf_hinet_AAKH_ABNH/stack/AAKH-ABNH/AAKH-ABNH.U-U.sac";
+  // char *out_sac = "/home/woodwood/hpc/station_2/ncf_hinet_AAKH_ABNH/stack/AAKH-ABNH/AAKH-ABNH.U-U.sac";
   char *out_sac_copy = strdup(out_sac);
+  
+  // for debug, check for out_sac
+  printf("[INFO]: out_sac: %s\n", out_sac);
+
   if (create_parent_dir(out_sac) == -1)
   {
     fprintf(stderr, "Error creating directory %s: ", dirname(out_sac_copy));
