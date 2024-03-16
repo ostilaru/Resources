@@ -1,11 +1,14 @@
 #include "cuda.util.cuh"
+#include "node_util.h"
 
 const float RAMUPPERBOUND = 0.9;
 
+// NOTE: DimCompute: BLOCKX = 32, BLOCKY = 32
 void DimCompute(dim3 *pdimgrd, dim3 *pdimblk, size_t width, size_t height) {
   pdimblk->x = BLOCKX;
   pdimblk->y = BLOCKY;
 
+  // tag: for debug, trying to limit dimgrd
   pdimgrd->x = (width + BLOCKX - 1) / BLOCKX;
   pdimgrd->y = (height + BLOCKY - 1) / BLOCKY;
 }
@@ -21,6 +24,7 @@ size_t QueryAvailGpuRam(size_t deviceID) {
   return freeram;
 }
 
+// FIXME: if reqram > avialRam, then we can't process
 size_t EstimateGpuBatch(size_t gpu_id, size_t fixedRam, size_t unitram,
                         int numType, int rank, int *n, int *inembed,
                         int istride, int idist, int *onembed, int ostride,
@@ -29,6 +33,7 @@ size_t EstimateGpuBatch(size_t gpu_id, size_t fixedRam, size_t unitram,
   size_t d_batch = 0;
   size_t availram = QueryAvailGpuRam(gpu_id);
 
+  // tag: origin logic
   size_t reqram = fixedRam;
   if (reqram > availram) {
     fprintf(stderr, "Not enough gpu ram required:%lu, gpu reamin ram: %lu\n",
@@ -77,4 +82,32 @@ void GpuCalloc(void **pptr, size_t sz) {
 void GpuFree(void **pptr) {
   CUDACHECK(cudaFree(*pptr));
   *pptr = NULL;
+}
+
+// tag: for debug, print each elem of the (cufftComplex *) array
+__global__ void PrintCufftComplex(cufftComplex *arr, int n) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; // 一维线程索引
+
+    if (idx < n) { // 确保不超出数组界限
+        printf("arr[%d]: %.14f + %.14fi\n", idx, arr[idx].x, arr[idx].y);
+    }
+}
+
+__global__ void PrintCufftReal(cufftReal *arr, int n) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; // 一维线程索引
+
+    if (idx < n) { // 确保不超出数组界限
+        printf("arr[%d]: %.14f\n", idx, arr[idx]);
+    }
+}
+
+__global__ void PrintPairNode(PAIRNODE *pairlist, int n) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x; // 一维线程索引
+
+    if (idx < n) { // 确保不超出数组界限
+        printf("pairlist[%d]: (srcidx:%d, staidx:%d), delta: %.14f\n", idx, pairlist[idx].srcidx, pairlist[idx].staidx, pairlist[idx].headncf.delta);
+        // printf("pairlist[%d]: (srcidx:%d)\n", idx, pairlist[idx].srcidx);
+        // printf("pairlist[%d]: (staidx:%d)\n", idx, pairlist[idx].staidx);
+        printf("pairlist[%d]: pairlist.headncf.delta: %.14f\n", idx, pairlist[idx].headncf.delta);
+    }
 }

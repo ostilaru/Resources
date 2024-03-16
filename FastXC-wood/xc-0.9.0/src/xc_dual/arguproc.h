@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 typedef struct ARGUTYPE
 {
@@ -18,9 +19,13 @@ typedef struct ARGUTYPE
   char *ncf_dir;
   float cclength; /* half length of output NCF */
   int gpu_id;     /* GPU ID */
+
+  // TODO: add argument for output stack path
+  char *stack_dir;
 } ARGUTYPE;
 
 void usage();
 void ArgumentProcess(int argc, char **argv, ARGUTYPE *pargument);
+char *createFilePath(const char *stack_dir, const char *sta_pair, const char *base_name);
 
 #endif

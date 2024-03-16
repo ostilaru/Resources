@@ -100,6 +100,7 @@ cleanup:
     free(fname_copy); // FREE MEMORY
 }
 
+// NOTE: process head-info of the ncf(XC) file
 void SacheadProcess(SACHEAD *ncfhd, SEGSPEC *srchd, SEGSPEC *stahd, float delta,
                     int ncc, float cclength)
 {
@@ -172,3 +173,31 @@ void GenCCFPath(char *ccf_path, char *src_path, char *sta_path, char *output_dir
     CreateDir(ccf_dir);
     snprintf(ccf_path, 2 * MAXLINE, "%s/%s", ccf_dir, ccf_name);
 }
+
+/* Generate the output XC(Cross-Correlation) path */
+char *GetNcfPath(char *src_path, char *sta_path, char *output_dir)
+{
+    // Extract file names from source and station paths
+    char src_file_name[MAXNAME];
+    char sta_file_name[MAXNAME];
+
+    char src_station[16], src_channel[16];
+    char sta_station[16], sta_channel[16];
+
+    char src_year[5], src_jday[4], src_hm[5];
+    char sta_year[5], sta_jday[4], sta_hm[5];
+
+    strncpy(src_file_name, basename(src_path), MAXNAME);
+    strncpy(sta_file_name, basename(sta_path), MAXNAME);
+
+    // Split file names into individual components
+    SplitFileName(src_file_name, ".", src_station, src_year, src_jday, src_hm, src_channel);
+    SplitFileName(sta_file_name, ".", sta_station, sta_year, sta_jday, sta_hm, sta_channel);
+
+    // Generate new CCF file name based on time cross flag
+    char *ccf_path = (char *)malloc(2 * MAXLINE);
+    snprintf(ccf_path, 2 * MAXLINE, "%s/%s-%s.%s-%s.sac", output_dir, src_station, sta_station, src_channel, sta_channel);
+
+    return ccf_path;
+}
+

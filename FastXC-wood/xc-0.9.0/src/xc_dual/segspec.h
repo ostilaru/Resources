@@ -8,12 +8,13 @@
 #ifndef _SEGSPEC_H
 #define _SEGSPEC_H
 
+// NOTE: struct segspec
 typedef struct segspec_s
 {
   float stla;
   float stlo;
   /* segment info */
-  int nstep;
+  int nstep;    // NOTE: nstep is the number of segments, example divide 24h into 12 segments
 
   /* FFT info  */
   int nspec; /* use fftr() number of complex eg 2*nspec float */

@@ -46,6 +46,7 @@
 #ifndef _sachead_h
 #define _sachead_h
 
+// NOTE: SACHEAD
 typedef struct sac_head
 {
   float delta;     /* RF time increment, sec    */

@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "complex.h": "c",
+        "design_filter_response.h": "c",
+        "in_out_node_c1.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}

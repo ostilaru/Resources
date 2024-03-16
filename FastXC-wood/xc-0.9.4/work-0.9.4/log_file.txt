@@ -1,0 +1,566 @@
+2024-01-09 03:26:15,043 - INFO - Avail cpu ram: 48.493 GB
+Avail gpu ram on device0: 20.220 GB
+[GPU no.0]: batch = 567, num_ch=3
+[Waiting:] Reading in SAC data, take some time...
+Done reading in SAC data.
+Writing the output spectra ... take some time
+Finish writing the output 1701 spectra
+
+2024-01-09 03:26:17,625 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 12.078 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.478 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:17,625 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 12.078 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.478 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:20,756 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 12.078 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.400 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:20,756 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 12.078 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.400 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:21,581 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 12.070 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.438 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:21,581 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 12.070 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.438 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:23,663 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 12.078 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:23,663 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 12.078 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:24,191 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.994 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:24,191 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.994 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:27,305 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.309 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:27,305 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.309 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:27,922 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.452 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:27,922 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.452 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:29,786 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:29,786 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:30,256 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.464 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:30,256 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.464 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:33,857 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.248 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:33,857 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.248 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:34,120 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.453 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:34,120 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.453 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:35,966 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.248 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:35,966 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.248 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:36,407 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.477 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:36,407 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.477 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:39,984 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.248 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:39,984 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.248 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:40,703 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.490 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:40,703 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.490 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:42,229 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:42,229 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:42,654 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.472 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:42,654 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.472 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:46,467 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:46,467 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:47,096 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.452 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:47,096 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.452 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:48,649 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.248 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:48,649 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.248 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:49,083 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.480 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:49,083 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.480 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:52,521 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:52,521 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:53,151 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.452 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:53,151 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.452 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.515 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:54,276 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:54,276 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.247 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:54,496 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.500 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:54,496 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.500 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:58,069 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.294 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:58,069 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.294 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:58,723 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.496 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:58,723 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.496 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:59,280 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.523 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.536 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:59,280 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.523 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.536 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:59,559 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.568 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.477 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:26:59,559 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.568 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.477 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:27:00,082 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.520 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:27:00,082 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.520 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:27:02,711 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.337 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+
+2024-01-09 03:27:02,711 - INFO - [INFO]: cclength = 50.000000
+[INFO]: delta = 0.100000
+[INFO]: ncc = 1001
+Avail cpu ram: 11.337 GB
+Avail gpu ram: 20.222 GB
+Used gpu ram: 20.496 GB
+[INFO]: Doing Cross Correlation!
+[INFO]: Finish Cross Correlation!
+

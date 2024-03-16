@@ -1,6 +1,6 @@
 from fastxc.fastxc import FastXC
 
-ini_file = './config_hinet.ini'
+ini_file = '/home/woodwood/hpc/Resources/FastXC-wood/work-0.9.0/config_hinet.ini'
 
 job = FastXC(ini_file)
 
@@ -32,3 +32,4 @@ job.deploy_stack_cmd()
 if job.generate_rotate_list_dir():
     job.generate_rotate_cmd()
     job.deploy_rotate_cmd()
+ 

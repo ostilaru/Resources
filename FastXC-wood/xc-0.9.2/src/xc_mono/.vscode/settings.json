@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.c": "c",
+        "complex": "cpp",
+        "cstring": "cpp",
+        "read_segspec.h": "c",
+        "segspec.h": "c",
+        "util.h": "c"
+    }
+}

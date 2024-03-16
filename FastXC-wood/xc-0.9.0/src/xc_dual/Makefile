@@ -1,3 +1,6 @@
+# 为nvcc编译器添加的标志
+NVCCFLAG=-G
+
 #CC=gcc -Wall -DDEBUG
 CC=gcc -Wall
 
@@ -41,7 +44,7 @@ $(PROG):$(OBJS) $(CUDAOBJS)
 	$(CC) $(CFLAG) -c $<
 
 %.o: %.cu
-	$(NVCC) $(CFLAG) -c $< 
+	$(NVCC) $(CFLAG) $(NVCCFLAG) -c $< 
 
 clean:
 	-rm *.o

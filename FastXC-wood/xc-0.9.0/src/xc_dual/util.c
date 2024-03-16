@@ -45,7 +45,9 @@ size_t QueryAvailCpuRam()
     }
     availram = sinfo.freeram;
   }
-  availram = availram / 4; // set by wangjx 2023.06.07
+  // tag: ??
+  // availram = availram / 4; // set by wangjx 2023.06.07
+  availram = availram;
   printf("Avail cpu ram: %.3f GB\n", availram * 1.0 / GIGABYTES);
 
   return availram;
@@ -79,9 +81,10 @@ void CpuFree(void **pptr)
 // Estimate the number of batches that can be allocated in CPU RAM
 size_t EstimateCpuBatch(size_t fixedRam, size_t unitRam)
 {
-
   // Query available CPU RAM
   size_t availableRam = QueryAvailCpuRam();
+  // NOTE: check available CPU RAM
+  printf("[INFO]: available CPU RAM: %.3f GB\n", (float)availableRam / (1024 * 1024 * 1024));
 
   if (availableRam < fixedRam)
   {

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 
+// NOTE: `read_spec_lst` is a function that reads a spec_list_file containing a list of paths
 FilePaths *read_spec_lst(char *spec_lst_file)
 {
   FILE *fp;

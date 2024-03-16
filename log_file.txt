@@ -1,0 +1,4 @@
+2024-01-03 19:26:15,374 - ERROR - /bin/sh: 1: /home/woodwood/hpc/Resources/FastXC-wood/xc-0.9.0/bin/sac2spec_c1_test: Permission denied
+
+2024-01-03 19:30:36,065 - ERROR - /bin/sh: 1: /home/woodwood/hpc/Resources/FastXC-wood/xc-0.9.0/bin/sac2spec_c1_test: Permission denied
+
