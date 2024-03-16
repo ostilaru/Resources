@@ -59,6 +59,9 @@ void ArgumentProcess(int argc, char **argv, ARGUTYPE *parg)
 char *createFilePath(const char *stack_dir, const char *sta_pair, const char *base_name) { 
   // find the last dot in base_name
   const char *last_dot = strrchr(base_name, '.');
+
+  // tag: for debug, check for sta_pair
+  printf("sta_pair_IN: %s\n", sta_pair);
   
   if (last_dot != NULL) {
     size_t path_len = strlen(stack_dir) + 1 + strlen(sta_pair) + 1 + strlen(base_name) + strlen(".ncf") + 1;

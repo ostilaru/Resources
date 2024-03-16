@@ -5,7 +5,7 @@ __global__ void cmuldual2DKernel(cuComplex *d_specsrcvec, size_t srcpitch, size_
                                  cuComplex *d_specstavec, size_t stapitch, size_t staoffset,
                                  PAIRNODE *d_pairlist, size_t paircnt,
                                  cuComplex *d_segncfvec, size_t ncfpitch,
-                                 int nspec)
+                                 int nspec, size_t sta_spectrum_size)
 {
   // get the index of the current thread
   size_t col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -22,8 +22,9 @@ __global__ void cmuldual2DKernel(cuComplex *d_specsrcvec, size_t srcpitch, size_
     size_t srcidx, staidx;
     srcrow = d_pairlist[row].srcidx;
     starow = d_pairlist[row].staidx;
-    srcidx = srcrow * srcpitch + srcoffset + col;
-    staidx = starow * stapitch + staoffset + col;
+    // printf("srcrow: %d, starow: %d\n", srcrow, starow);
+    srcidx = (srcrow * srcpitch + srcoffset + col) % sta_spectrum_size;
+    staidx = (starow * stapitch + staoffset + col) % sta_spectrum_size;
 
     // cuComplex src = d_specsrcvec[srcidx];
     // cuComplex sta_conj =

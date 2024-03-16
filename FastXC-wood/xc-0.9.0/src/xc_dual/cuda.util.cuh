@@ -10,7 +10,9 @@
 #include <cufft.h>
 #include <device_launch_parameters.h>
 #include <stdio.h>
+#include "node_util.h"
 
+// FIXME: 3060 gpu do not have enough resources, so I try modify the block size to 16
 #define BLOCKX 32
 #define BLOCKY 32
 
@@ -45,5 +47,11 @@ void CufftPlanAlloc(cufftHandle *, int, int *, int *, int, int, int *, int, int,
 void GpuMalloc(void **, size_t);
 void GpuCalloc(void **, size_t);
 void GpuFree(void **);
+
+__global__ void PrintCufftComplex(cufftComplex *arr, int n);
+
+__global__ void PrintCufftReal(cufftReal *arr, int n);
+
+__global__ void PrintPairNode(PAIRNODE *pairlist, int n);
 
 #endif

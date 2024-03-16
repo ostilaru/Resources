@@ -4,12 +4,13 @@
   // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
       {
           "name": "CUDA C++: Launch",
           "type": "cuda-gdb",
           "request": "launch",
           "program": "${fileDirname}/test",
-          "preLaunchTask": "CUDA: nvcc 调试"
+          "preLaunchTask": "CUDA: nvcc 调试",
       },
       {
           "name": "CUDA C++: Attach",
@@ -22,6 +23,32 @@
           "request": "launch",
           "program": "${fileDirname}/${fileBasenameNoExtension}",
           "preLaunchTask": "CUDA: nvcc 编译并运行"
-      }
+      },
+      {
+        "name": "Debug xc_dual CUDA Program",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "/home/woodwood/hpc/Resources/FastXC-wood/xc-0.9.0/bin/spec_xc_dual",
+        "args": [
+            "-A", "/home/woodwood/hpc/station_2/z-test/specList_2year_0.9.4/specList_array1.txt",
+            "-B", "/home/woodwood/hpc/station_2/z-test/specList_2year_0.9.4/specList_array2.txt",
+            "-S", "/home/woodwood/hpc/station_2/z-test/stack_test_2year",
+            "-C", "500"
+        ],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}",
+        "environment": [],    
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ],
+        // "miDebuggerPath": "/usr/local/cuda/bin/cuda-gdb"
+        "miDebuggerPath": "/usr/bin/gdb" // 根据你的系统路径调整
+    },
   ]
 }
