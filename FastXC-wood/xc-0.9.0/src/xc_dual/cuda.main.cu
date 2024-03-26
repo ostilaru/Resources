@@ -174,6 +174,48 @@ void *writethrd_onlyOnePair(void *arg)
   return NULL;
 }
 
+// NOTE: write all ncf.sac into just one file
+int write_multiple_sac(const char *filename, SHAREDITEM *pItem, int paircnt) {
+    FILE *fp = fopen(filename, "wb");
+    if (fp == NULL) {
+        fprintf(stderr, "Error opening file %s for writing ncf.sac!\n", filename);
+        return -1;
+    }
+
+    for (int i = 0; i < paircnt; i++) {
+      SHAREDITEM *ptr = pItem + i;
+      // printf("npts = %d, delta = %f\n", ptr->phead->npts, ptr->phead->delta);
+      // 写入SAC头部信息
+      if (fwrite(ptr->phead, sizeof(SACHEAD), 1, fp) != 1) {
+          fprintf(stderr, "Error writing SAC header for item %d.\n", i);
+          fclose(fp);
+          return -1;
+      }
+
+      // 写入SAC数据
+      int data_size = ptr->phead->npts * sizeof(float); // 计算数据大小
+      if (fwrite(ptr->pdata, data_size, 1, fp) != 1) {
+          fprintf(stderr, "Error writing SAC data for item %d.\n", i);
+          fclose(fp);
+          return -1;
+      }
+    }
+
+    // 使用ftell获取文件大小
+    long filesize = ftell(fp);
+    if (filesize == -1) {
+        fprintf(stderr, "Error determining file size.\n");
+        fclose(fp);
+        return -1;
+    } else {
+        double filesizeGB = filesize / (double)(1 << 30); // 转换为GB
+        printf("[INFO]: File size: %.3f GB.\n", filesizeGB);
+    }
+
+    fclose(fp);
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
   
@@ -482,8 +524,11 @@ int main(int argc, char **argv)
   GpuMalloc((void **)&d_src_spectrum_batch, batch_data_unit_count * vec_size);
   GpuMalloc((void **)&d_sta_spectrum_batch, batch_data_unit_count * vec_size);
 
-  // tag: for debug, check batch_data_unit_count * vec_size
-  size_t sta_spectrum_size = batch_data_unit_count * vec_cnt;
+  /* Alloc gpu dynamic memory with d_batch */
+  CufftPlanAlloc(&plan, rank, n, inembed, istride, idist, onembed, ostride, odist, type, d_batch);
+
+  // // tag: for debug, check batch_data_unit_count * vec_size
+  // size_t sta_spectrum_size = batch_data_unit_count * vec_cnt;
 
   GpuMalloc((void **)&d_pairlist_batch, d_batch * sizeof(PAIRNODE));
   GpuMalloc((void **)&d_segment_ncf_spectrum_batch, d_batch * nfft * sizeof(complex));
@@ -520,9 +565,6 @@ int main(int argc, char **argv)
     CUDACHECK(cudaMemcpy(d_src_spectrum_batch, src_buffer + start_index, current_batch_size * vec_size, cudaMemcpyHostToDevice));
     CUDACHECK(cudaMemcpy(d_sta_spectrum_batch, sta_buffer + start_index, current_batch_size * vec_size, cudaMemcpyHostToDevice));
 
-    /* Alloc gpu dynamic memory with d_batch */
-    CufftPlanAlloc(&plan, rank, n, inembed, istride, idist, onembed, ostride, odist, type, d_batch);
-
     h_finishcnt = 0;
 
     printf("[INFO]: Doing Cross Correlation!\n");
@@ -530,30 +572,18 @@ int main(int argc, char **argv)
       // Set the number of [h_proccnt]: how many ncfs will be written to disk
       size_t h_proccnt = (h_finishcnt + current_batch_size > paircnt) ? (paircnt - h_finishcnt) : current_batch_size;
 
-      // tag: for debug, check h_proccnt
-      printf("[INFO]: h_proccnt: %ld\n", h_proccnt);
-
-      // Set the memory of [ncfBuffer] to zero
-      // memset(ncf_buffer, 0, h_batch * nfft * sizeof(float));
-
       // tag: xc_start_time
       struct timespec xc_start_time, xc_end_time;
       clock_gettime(CLOCK_MONOTONIC, &xc_start_time);
 
-      // tag: for debug, check ncf_buffer
-      printf("[INFO]: ncf_buffer: %.3f MB\n", (float)h_batch * nfft * sizeof(float) / (1024 * 1024));
-
       size_t d_finishcnt = 0;
 
       // Launch GPU processing
-      for(; d_finishcnt < current_batch_size; ) {
+      while(d_finishcnt < current_batch_size) {
         CUDACHECK(cudaMemset(d_total_ncf_batch, 0, d_batch * nfft * sizeof(float)));
 
         // size_t d_proccnt = (d_finishcnt + d_batch > h_proccnt) ? (h_proccnt - d_finishcnt) : d_batch;
         size_t d_proccnt = (d_finishcnt + d_batch > current_batch_size) ? (current_batch_size - d_finishcnt) : d_batch;
-        
-        // // tag: for debug, check d_proccnt
-        // printf("[INFO]: d_proccnt: %ld,\t d_batch: %ld\n", d_proccnt, d_batch);
 
         CUDACHECK(cudaMemcpy(d_pairlist_batch, pPairList + h_finishcnt + d_finishcnt + all_finishcnt,
                             d_proccnt * sizeof(PAIRNODE),
@@ -574,42 +604,27 @@ int main(int argc, char **argv)
 
           cmuldual2DKernel<<<dimgrd, dimblk>>>(d_src_spectrum_batch, vec_cnt, stepidx * nspec,
                                              d_sta_spectrum_batch, vec_cnt, stepidx * nspec,
-                                             d_pairlist_batch, d_proccnt, d_segment_ncf_spectrum_batch, nfft, nspec, sta_spectrum_size);
+                                             d_pairlist_batch, d_proccnt, 
+                                             d_segment_ncf_spectrum_batch, nfft, 
+                                             nspec, current_batch_size);
 
           csum2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_spectrum_batch, nfft, d_segment_ncf_spectrum_batch, nfft, nspec, d_proccnt, nstep);
         }
         cufftExecC2R(plan, (cufftComplex *)d_total_ncf_spectrum_batch, (cufftReal *)d_total_ncf_batch);
-
-        cudaDeviceSynchronize();
-
         DimCompute(&dimgrd, &dimblk, nfft, d_proccnt);
         InvNormalize2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_batch, nfft, nfft, d_proccnt, delta);
         CUDACHECK(cudaMemcpy(ncf_buffer + (all_finishcnt + d_finishcnt) * nfft, d_total_ncf_batch, d_proccnt * nfft * sizeof(float), cudaMemcpyDeviceToHost));
 
-        /*
+        
+        // ------------------------------------------------------------------------------------------
         // tag: for debug, check d_total_ncf_spectrum_batch, d_total_ncf_batch
         complex* d_total_ncf_spectrum_batch_copy = (complex*)malloc(d_proccnt * nfft * sizeof(complex));
         float* d_total_ncf_batch_copy = (float*)malloc(d_proccnt * nfft * sizeof(float));
         CUDACHECK(cudaMemcpy(d_total_ncf_spectrum_batch_copy, d_total_ncf_spectrum_batch, d_proccnt * nfft * sizeof(complex), cudaMemcpyDeviceToHost));
         CUDACHECK(cudaMemcpy(d_total_ncf_batch_copy, d_total_ncf_batch, d_proccnt * nfft * sizeof(float), cudaMemcpyDeviceToHost));
-  
-        // for(int i = 0; i < d_proccnt * nfft; i++) {
-        //   // if(d_total_ncf_spectrum_batch_copy[i].x != 0 || d_total_ncf_spectrum_batch_copy[i].y != 0) {
-        //   //   printf("[INFO]: d_total_ncf_spectrum_batch_copy[%d]: %.9f, %.9f\n", i, d_total_ncf_spectrum_batch_copy[i].x, d_total_ncf_spectrum_batch_copy[i].y);
-        //   // }
-        //   if(d_total_ncf_batch_copy[i] != 0) {
-        //     printf("[INFO]: d_total_ncf_batch_copy[%d]: %.9f\n", i, d_total_ncf_batch_copy[i]);
-        //   }
-        // }
+        // ------------------------------------------------------------------------------------------
 
-        // // tag: for debug, check for ncf_buffer
-        // for(int i = 0; i < h_batch * nfft; i++ ) {
-        //   if(ncf_buffer[i] != 0) {
-        //     printf("[INFO]: ncf_buffer[%d]: %.9f\n", i, ncf_buffer[i]);
-        //   }
-        // }
-        */
-
+        
         // NOTE: here cuda_calc finished
         for(size_t i = 0; i < d_proccnt; i++) {
           SHAREDITEM *ptr = pItem + globalidx_batch;
@@ -634,140 +649,8 @@ int main(int argc, char **argv)
     }
 
     all_finishcnt += current_batch_size;
-    
   }
 
-  
-
-  /*
-  // // Estimate the maximum number of batch
-  // size_t d_batch = EstimateGpuBatch(gpu_id, fixedGpuRam, unitgpuram, numType,
-  //                                   rank, n, inembed, istride, idist, onembed,
-  //                                   ostride, odist, typeArr);
-  // // set the maximum number of batch
-  // d_batch = (d_batch > h_batch) ? h_batch : d_batch;
-
-  // // tag: for debug, check d_batch
-  // printf("[INFO]: d_batch: %ld\n", d_batch);
-
-  // // Define GPU memory pointer
-  // cuComplex *d_src_spectrum = NULL;         // input src spectrum
-  // cuComplex *d_sta_spectrum = NULL;         // input sta spectrum
-  // cuComplex *d_segment_ncf_spectrum = NULL; // output ncf data, segment in spectrum
-  // cuComplex *d_total_ncf_spectrum = NULL;   // output ncf data, total in spectrum
-  // float *d_total_ncf = NULL;                // output ncf data, time signal
-  // PAIRNODE *d_pairlist = NULL;              // pair node
-
-  // // Allocate GPU memory for spectrum node data buffer for input
-  // GpuMalloc((void **)&d_src_spectrum, srccnt * vec_size);
-  // GpuMalloc((void **)&d_sta_spectrum, stacnt * vec_size);
-
-  // // Copy spectrum data from CPU buffer to GPU
-  // CUDACHECK(cudaMemcpy(d_src_spectrum, src_buffer, srccnt * vec_size, cudaMemcpyHostToDevice));
-  // CUDACHECK(cudaMemcpy(d_sta_spectrum, sta_buffer, stacnt * vec_size, cudaMemcpyHostToDevice));
-
-  // /* Alloc gpu dynamic memory with d_batch */
-  // CufftPlanAlloc(&plan, rank, n, inembed, istride, idist, onembed, ostride, odist, type, d_batch);
-
-  // GpuMalloc((void **)&d_pairlist, d_batch * sizeof(PAIRNODE));
-  // GpuMalloc((void **)&d_segment_ncf_spectrum, d_batch * nfft * sizeof(complex));
-  // GpuMalloc((void **)&d_total_ncf_spectrum, d_batch * nfft * sizeof(complex));
-  // GpuMalloc((void **)&d_total_ncf, d_batch * nfft * sizeof(float));
-
-  // size_t globalidx = 0;
-
-  // // tag: starttime
-  // struct timespec start_time, end_time;
-  // clock_gettime(CLOCK_MONOTONIC, &start_time);
-
-  // printf("[INFO]: Doing Cross Correlation!\n");
-  // for (size_t h_finishcnt = 0; h_finishcnt < paircnt; h_finishcnt += h_batch)
-  // {
-  //   // Set the number of [h_proccnt]: how many ncfs will be written to disk
-  //   size_t h_proccnt = (h_finishcnt + h_batch > paircnt) ? (paircnt - h_finishcnt) : h_batch;
-
-  //   // tag: for debug, check h_proccnt
-  //   printf("[INFO]: h_proccnt: %ld\n", h_proccnt);
-
-  //   // Set the memory of [ncfBuffer] to zero
-  //   memset(ncf_buffer, 0, h_batch * nfft * sizeof(float));
-
-  //   // tag: for debug, check ncf_buffer
-  //   printf("[INFO]: ncf_buffer: %.3f MB\n", (float)h_batch * nfft * sizeof(float) / (1024 * 1024));
-
-  //   pthread_mutex_lock(&g_paramlock);   // lock
-  //   g_totalload = paircnt;              // total number of pairs
-  //   g_batchload = h_proccnt;            // number of pairs in this batch
-  //   pthread_mutex_unlock(&g_paramlock); // unlock
-
-  //   // FIXME: here create a new thread for write sac file
-  //   // pthread_t tid;
-  //   // pthread_create(&tid, NULL, writethrd, (void *)pItem);
-
-  //   // Launch GPU processing
-  //   for (size_t d_finishcnt = 0; d_finishcnt < h_proccnt; d_finishcnt += d_batch)
-  //   {
-  //     cudaMemset(d_total_ncf, 0, d_batch * nfft * sizeof(float));
-
-  //     size_t d_proccnt = (d_finishcnt + d_batch > h_proccnt) ? (h_proccnt - d_finishcnt) : d_batch;
-
-  //     // tag: for debug, check for d_proccnt = 10,10,...,10,5
-  //     // printf("[INFO]: d_proccnt: %ld\n", d_proccnt);
-
-  //     CUDACHECK(cudaMemcpy(d_pairlist, pPairList + h_finishcnt + d_finishcnt,
-  //                          d_proccnt * sizeof(PAIRNODE),
-  //                          cudaMemcpyHostToDevice));
-
-  //     CUDACHECK(cudaMemset(d_total_ncf_spectrum, 0, d_proccnt * nfft * sizeof(cuComplex)));
-  //     dim3 dimgrd, dimblk;
-  //     DimCompute(&dimgrd, &dimblk, nspec, d_proccnt);
-  //     // NOTE: process each step, example: divide 24h into 12 steps
-  //     for (size_t stepidx = 0; stepidx < nstep; stepidx++)
-  //     {
-  //       /* step by step cc */
-  //       /* Reset temp ncf to zero */
-  //       CUDACHECK(cudaMemset(d_segment_ncf_spectrum, 0, d_proccnt * nfft * sizeof(cuComplex)));
-
-  //       // TODO: `cmuldual2DKernel` need to be rewrite
-  //       cmuldual2DKernel<<<dimgrd, dimblk>>>(d_src_spectrum, vec_cnt, stepidx * nspec,
-  //                                            d_sta_spectrum, vec_cnt, stepidx * nspec,
-  //                                            d_pairlist, d_proccnt, d_segment_ncf_spectrum, nfft, nspec);
-
-  //       // TODO: `csum2DKernel` need to be rewrite                                     
-  //       csum2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_spectrum, nfft, d_segment_ncf_spectrum, nfft, nspec, d_proccnt, nstep);
-  //     }
-  //     cufftExecC2R(plan, (cufftComplex *)d_total_ncf_spectrum, (cufftReal *)d_total_ncf);
-  //     DimCompute(&dimgrd, &dimblk, nfft, d_proccnt);
-  //     InvNormalize2DKernel<<<dimgrd, dimblk>>>(d_total_ncf, nfft, nfft, d_proccnt, delta);
-  //     cudaMemcpy(ncf_buffer + d_finishcnt * nfft, d_total_ncf, d_proccnt * nfft * sizeof(float), cudaMemcpyDeviceToHost);
-
-  //     // FIXME: here cuda_calc finished, start to stack
-      
-  //     for (size_t i = 0; i < d_proccnt; i++)
-  //     {
-  //       SHAREDITEM *ptr = pItem + globalidx;
-  //       pthread_mutex_lock(&(ptr->mtx));
-  //       if (ptr->valid == -1)
-  //       {
-  //         // tag: now not create ncf dir
-  //         // GenCCFPath(ptr->fname,
-  //         //            pSpecSrcList[(pPairList + globalidx)->srcidx].filepath,
-  //         //            pSpecStaList[(pPairList + globalidx)->staidx].filepath,
-  //         //            ncf_dir);
-
-  //         ptr->phead = &((pPairList + globalidx)->headncf);
-  //         ptr->pdata = ncf_buffer + (d_finishcnt + i) * nfft + nspec - nhalfcc - 1;
-  //         ptr->valid = 0;
-  //       }
-  //       pthread_mutex_unlock(&(ptr->mtx));
-  //       globalidx++;
-  //     }
-
-  //   }
-
-  //   // pthread_join(tid, NULL);
-  // }
-  
 
   // TODO: stack process
   // -----------------------------------------------------------------------------
@@ -813,7 +696,29 @@ int main(int argc, char **argv)
     return 1;
   }
   write_sac(out_sac, hdstack, stackcc);
-  // -----------------------------------------------------------------------------
+
+  // ---------------------------------Start Write NCF file--------------------------------------------
+  // tag: write pItem into a file
+  if(ncf_dir != NULL) {
+    struct timespec start_write_time, end_write_time;
+    clock_gettime(CLOCK_MONOTONIC, &start_write_time);
+    printf("[INFO]: ---------------Start Writing NCF file------------------\n");
+    // const char *all_ncf_sac = "/home/woodwood/hpc/station_2/z-test/stack_test_2year/ncf/AAKH-ABNH.U-U.ncf.sac";
+    if(create_parent_dir(ncf_filepath) == -1) {
+      fprintf(stderr, "Error creating NCF directory %s: ", dirname(ncf_filepath));
+      perror(NULL);
+      free(ncf_filepath);
+      return 1;
+    }
+    write_multiple_sac(ncf_filepath, pItem, paircnt);
+    clock_gettime(CLOCK_MONOTONIC, &end_write_time);
+    double elapsed_write_time = (end_write_time.tv_sec - start_write_time.tv_sec) +
+                        (end_write_time.tv_nsec - start_write_time.tv_nsec) / 1e9;
+    printf("[INFO]: Write time: %.6f seconds\n", elapsed_write_time);
+    printf("[INFO]: ---------------Finish Writing NCF file-----------------\n");
+  }
+  
+  // ---------------------------------End Write NCF file--------------------------------------------
 
   // tag: endtime
   clock_gettime(CLOCK_MONOTONIC, &end_time);
@@ -868,6 +773,7 @@ int main(int argc, char **argv)
   printf("[INFO]: XC time: %.6f seconds\n", xc_time_sum);
 
   printf("[INFO]: Stack time: %.6f seconds\n", elapsed_stack_time);
+
   printf("[INFO]: Total time: %.6f seconds\n", elapsed_time);
 
   return 0;

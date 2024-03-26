@@ -32,6 +32,7 @@
         "args": [
             "-A", "/home/woodwood/hpc/station_2/z-test/specList_2year_0.9.4/specList_array1.txt",
             "-B", "/home/woodwood/hpc/station_2/z-test/specList_2year_0.9.4/specList_array2.txt",
+            "-O", "/home/woodwood/hpc/station_2/z-test/stack_test_2year/ncf",
             "-S", "/home/woodwood/hpc/station_2/z-test/stack_test_2year",
             "-C", "500"
         ],

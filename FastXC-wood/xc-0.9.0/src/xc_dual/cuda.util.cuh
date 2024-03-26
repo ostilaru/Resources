@@ -13,8 +13,8 @@
 #include "node_util.h"
 
 // FIXME: 3060 gpu do not have enough resources, so I try modify the block size to 16
-#define BLOCKX 32
-#define BLOCKY 32
+#define BLOCKX 16
+#define BLOCKY 16
 
 #define CUDACHECK(cmd)                                                         \
   do {                                                                         \

@@ -83,31 +83,3 @@ void GpuFree(void **pptr) {
   CUDACHECK(cudaFree(*pptr));
   *pptr = NULL;
 }
-
-// tag: for debug, print each elem of the (cufftComplex *) array
-__global__ void PrintCufftComplex(cufftComplex *arr, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x; // 一维线程索引
-
-    if (idx < n) { // 确保不超出数组界限
-        printf("arr[%d]: %.14f + %.14fi\n", idx, arr[idx].x, arr[idx].y);
-    }
-}
-
-__global__ void PrintCufftReal(cufftReal *arr, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x; // 一维线程索引
-
-    if (idx < n) { // 确保不超出数组界限
-        printf("arr[%d]: %.14f\n", idx, arr[idx]);
-    }
-}
-
-__global__ void PrintPairNode(PAIRNODE *pairlist, int n) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x; // 一维线程索引
-
-    if (idx < n) { // 确保不超出数组界限
-        printf("pairlist[%d]: (srcidx:%d, staidx:%d), delta: %.14f\n", idx, pairlist[idx].srcidx, pairlist[idx].staidx, pairlist[idx].headncf.delta);
-        // printf("pairlist[%d]: (srcidx:%d)\n", idx, pairlist[idx].srcidx);
-        // printf("pairlist[%d]: (staidx:%d)\n", idx, pairlist[idx].staidx);
-        printf("pairlist[%d]: pairlist.headncf.delta: %.14f\n", idx, pairlist[idx].headncf.delta);
-    }
-}

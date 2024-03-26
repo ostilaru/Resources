@@ -12,7 +12,7 @@ __global__ void cmuldual2DKernel(cuComplex *d_specsrcvec, size_t srcpitch,
                                  size_t stapitch, size_t staoffset,
                                  PAIRNODE *d_pairlist, size_t paircnt,
                                  cuComplex *d_segncfvec, size_t ncfpitch,
-                                 int nspec, size_t sta_spectrum_size);
+                                 int nspec, size_t current_batch_size);
 
 __global__ void sum2DKernel(float *d_finalccvec, int dpitch, float *d_segncfvec,
                             int spitch, size_t width, size_t height, int nstep);

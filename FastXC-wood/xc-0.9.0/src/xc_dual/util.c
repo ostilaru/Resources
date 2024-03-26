@@ -48,7 +48,7 @@ size_t QueryAvailCpuRam()
   // tag: ??
   // availram = availram / 4; // set by wangjx 2023.06.07
   availram = availram;
-  printf("Avail cpu ram: %.3f GB\n", availram * 1.0 / GIGABYTES);
+  printf("[INFO]: Avail cpu ram: %.3f GB\n", availram * 1.0 / GIGABYTES);
 
   return availram;
 }

@@ -138,7 +138,7 @@ size_t GeneratePair_dual(PAIRNODE *ppairlist, SPECNODE *plist1, size_t cnt1,
   size_t paircnt = 0;
 
   // tag: for debug
-  printf("cnt1: %lu, cnt2: %lu\n", cnt1, cnt2);
+  printf("[INFO]: cnt1: %lu, cnt2: %lu\n", cnt1, cnt2);
 
   for (i = 0; i < cnt1 && (plist1 + i)->valid == 1; i++)
   {

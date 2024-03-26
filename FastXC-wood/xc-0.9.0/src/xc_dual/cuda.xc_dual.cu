@@ -1,16 +1,17 @@
 #include "cuda.xc_dual.cuh"
+#include <stdio.h>
 
 // TODO: this function need to be rewrite
 __global__ void cmuldual2DKernel(cuComplex *d_specsrcvec, size_t srcpitch, size_t srcoffset,
                                  cuComplex *d_specstavec, size_t stapitch, size_t staoffset,
                                  PAIRNODE *d_pairlist, size_t paircnt,
                                  cuComplex *d_segncfvec, size_t ncfpitch,
-                                 int nspec, size_t sta_spectrum_size)
+                                 int nspec, size_t current_batch_size)
 {
   // get the index of the current thread
   size_t col = blockIdx.x * blockDim.x + threadIdx.x;
   size_t row = blockIdx.y * blockDim.y + threadIdx.y;
-
+  
   // check if the index is out of bound
   if (col < nspec && row < paircnt)
   {
@@ -22,10 +23,16 @@ __global__ void cmuldual2DKernel(cuComplex *d_specsrcvec, size_t srcpitch, size_
     size_t srcidx, staidx;
     srcrow = d_pairlist[row].srcidx;
     starow = d_pairlist[row].staidx;
-    // printf("srcrow: %d, starow: %d\n", srcrow, starow);
-    srcidx = (srcrow * srcpitch + srcoffset + col) % sta_spectrum_size;
-    staidx = (starow * stapitch + staoffset + col) % sta_spectrum_size;
 
+    srcrow %= current_batch_size;
+    starow %= current_batch_size;
+
+    // srcidx = (srcrow * srcpitch + srcoffset + col) % current_batch_size;
+    // staidx = (starow * stapitch + staoffset + col) % current_batch_size;
+    
+    srcidx = (srcrow * srcpitch + srcoffset + col);
+    staidx = (starow * stapitch + staoffset + col);
+    
     // cuComplex src = d_specsrcvec[srcidx];
     // cuComplex sta_conj =
     //     make_cuComplex(d_specstavec[staidx].x, -d_specstavec[staidx].y);
