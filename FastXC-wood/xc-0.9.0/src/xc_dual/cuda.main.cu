@@ -332,6 +332,7 @@ int main(int argc, char **argv)
   printf("[INFO]: paircnt: %ld\n", paircnt);
 
   h_batch = (h_batch > paircnt) ? paircnt : h_batch;
+  printf("[INFO]: h_batch: %ld\n", h_batch);
   
   /* Alloc cpu dynamic memory */
   CpuMalloc((void **)&ncf_buffer, h_batch * nfft * sizeof(float));
@@ -345,9 +346,6 @@ int main(int argc, char **argv)
     SEGSPEC *phd_sta = &(pSpecStaList[pPairList[i].staidx].head);
     SacheadProcess(phd_ncf, phd_src, phd_sta, delta, ncc, cclength);
   }
-
-  // tag: for debug, check for pPairList.size
-  printf("[INFO]: pPairList.size: %ld\n", sizeof(pPairList));
 
   /* Slave thread  property */
   SHAREDITEM *pItem;
@@ -491,7 +489,6 @@ int main(int argc, char **argv)
   printf("[INFO]: total_batches: %ld\n", total_batches);
 
   size_t globalidx_batch = 0;
-  size_t h_finishcnt = 0;
   size_t all_finishcnt = 0;
 
   size_t fixedGpuRam_for_batch = batch_data_unit_count * vec_size * 2;
@@ -502,6 +499,7 @@ int main(int argc, char **argv)
                                       rank, n, inembed, istride, idist, onembed,
                                       ostride, odist, typeArr);
   d_batch = (d_batch > h_batch) ? h_batch : d_batch;
+
   // tag: for debug, check d_batch
   printf("[INFO]: d_batch: %ld\n", d_batch);
 
@@ -526,9 +524,6 @@ int main(int argc, char **argv)
 
   /* Alloc gpu dynamic memory with d_batch */
   CufftPlanAlloc(&plan, rank, n, inembed, istride, idist, onembed, ostride, odist, type, d_batch);
-
-  // // tag: for debug, check batch_data_unit_count * vec_size
-  // size_t sta_spectrum_size = batch_data_unit_count * vec_cnt;
 
   GpuMalloc((void **)&d_pairlist_batch, d_batch * sizeof(PAIRNODE));
   GpuMalloc((void **)&d_segment_ncf_spectrum_batch, d_batch * nfft * sizeof(complex));
@@ -562,91 +557,76 @@ int main(int argc, char **argv)
     printf("[INFO]: Processing batch %ld/%ld, current_batch_size: %ld\n", gpu_batch + 1, total_batches, current_batch_size);
 
     // Copy spectrum data from CPU buffer to GPU
-    CUDACHECK(cudaMemcpy(d_src_spectrum_batch, src_buffer + start_index, current_batch_size * vec_size, cudaMemcpyHostToDevice));
-    CUDACHECK(cudaMemcpy(d_sta_spectrum_batch, sta_buffer + start_index, current_batch_size * vec_size, cudaMemcpyHostToDevice));
-
-    h_finishcnt = 0;
+    CUDACHECK(cudaMemcpy(d_src_spectrum_batch, src_buffer + start_index * vec_cnt, current_batch_size * vec_size, cudaMemcpyHostToDevice));
+    CUDACHECK(cudaMemcpy(d_sta_spectrum_batch, sta_buffer + start_index * vec_cnt, current_batch_size * vec_size, cudaMemcpyHostToDevice));
 
     printf("[INFO]: Doing Cross Correlation!\n");
-    for(; h_finishcnt < current_batch_size; h_finishcnt += current_batch_size) {
-      // Set the number of [h_proccnt]: how many ncfs will be written to disk
-      size_t h_proccnt = (h_finishcnt + current_batch_size > paircnt) ? (paircnt - h_finishcnt) : current_batch_size;
 
-      // tag: xc_start_time
-      struct timespec xc_start_time, xc_end_time;
-      clock_gettime(CLOCK_MONOTONIC, &xc_start_time);
+    // tag: xc_start_time
+    struct timespec xc_start_time, xc_end_time;
+    clock_gettime(CLOCK_MONOTONIC, &xc_start_time);
 
-      size_t d_finishcnt = 0;
+    size_t d_finishcnt = 0;
 
-      // Launch GPU processing
-      while(d_finishcnt < current_batch_size) {
-        CUDACHECK(cudaMemset(d_total_ncf_batch, 0, d_batch * nfft * sizeof(float)));
+    // Launch GPU processing
+    while(d_finishcnt < current_batch_size) {
+      CUDACHECK(cudaMemset(d_total_ncf_batch, 0, d_batch * nfft * sizeof(float)));
 
-        // size_t d_proccnt = (d_finishcnt + d_batch > h_proccnt) ? (h_proccnt - d_finishcnt) : d_batch;
-        size_t d_proccnt = (d_finishcnt + d_batch > current_batch_size) ? (current_batch_size - d_finishcnt) : d_batch;
+      // size_t d_proccnt = (d_finishcnt + d_batch > h_proccnt) ? (h_proccnt - d_finishcnt) : d_batch;
+      size_t d_proccnt = (d_finishcnt + d_batch > current_batch_size) ? (current_batch_size - d_finishcnt) : d_batch;
 
-        CUDACHECK(cudaMemcpy(d_pairlist_batch, pPairList + h_finishcnt + d_finishcnt + all_finishcnt,
-                            d_proccnt * sizeof(PAIRNODE),
-                            cudaMemcpyHostToDevice));
+      CUDACHECK(cudaMemcpy(d_pairlist_batch, pPairList + d_finishcnt + all_finishcnt,
+                          d_proccnt * sizeof(PAIRNODE),
+                          cudaMemcpyHostToDevice));
 
-        // tag: for debug, check d_pairlist_batch
-        PAIRNODE* d_pairlist_batch_copy = (PAIRNODE*)malloc(d_proccnt * sizeof(PAIRNODE));
-        CUDACHECK(cudaMemcpy(d_pairlist_batch_copy, d_pairlist_batch, d_proccnt * sizeof(PAIRNODE), cudaMemcpyDeviceToHost));
-        
-        CUDACHECK(cudaMemset(d_total_ncf_spectrum_batch, 0, d_proccnt * nfft * sizeof(cuComplex)));
-        dim3 dimgrd, dimblk;
-        DimCompute(&dimgrd, &dimblk, nspec, d_proccnt);
-        // NOTE: process each step, example: divide 24h into 12 steps
-        for (size_t stepidx = 0; stepidx < nstep; stepidx++) {
-          /* step by step cc */
-          /* Reset temp ncf to zero */
-          CUDACHECK(cudaMemset(d_segment_ncf_spectrum_batch, 0, d_proccnt * nfft * sizeof(cuComplex)));
+      // tag: for debug, check d_pairlist_batch
+      PAIRNODE* d_pairlist_batch_copy = (PAIRNODE*)malloc(d_proccnt * sizeof(PAIRNODE));
+      CUDACHECK(cudaMemcpy(d_pairlist_batch_copy, d_pairlist_batch, d_proccnt * sizeof(PAIRNODE), cudaMemcpyDeviceToHost));
+      
+      CUDACHECK(cudaMemset(d_total_ncf_spectrum_batch, 0, d_batch * nfft * sizeof(cuComplex)));
+      dim3 dimgrd, dimblk;
+      DimCompute(&dimgrd, &dimblk, nspec, d_proccnt);
+      // NOTE: process each step, example: divide 24h into 12 steps
+      for (size_t stepidx = 0; stepidx < nstep; stepidx++) {
+        /* step by step cc */
+        /* Reset temp ncf to zero */
+        CUDACHECK(cudaMemset(d_segment_ncf_spectrum_batch, 0, d_batch * nfft * sizeof(cuComplex)));
 
-          cmuldual2DKernel<<<dimgrd, dimblk>>>(d_src_spectrum_batch, vec_cnt, stepidx * nspec,
-                                             d_sta_spectrum_batch, vec_cnt, stepidx * nspec,
-                                             d_pairlist_batch, d_proccnt, 
-                                             d_segment_ncf_spectrum_batch, nfft, 
-                                             nspec, current_batch_size);
+        cmuldual2DKernel<<<dimgrd, dimblk>>>(d_src_spectrum_batch, vec_cnt, stepidx * nspec,
+                                            d_sta_spectrum_batch, vec_cnt, stepidx * nspec,
+                                            d_pairlist_batch, d_proccnt, 
+                                            d_segment_ncf_spectrum_batch, nfft, 
+                                            nspec, batch_data_unit_count);
 
-          csum2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_spectrum_batch, nfft, d_segment_ncf_spectrum_batch, nfft, nspec, d_proccnt, nstep);
+        csum2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_spectrum_batch, nfft, d_segment_ncf_spectrum_batch, nfft, nspec, d_proccnt, nstep);
+      }
+      cufftExecC2R(plan, (cufftComplex *)d_total_ncf_spectrum_batch, (cufftReal *)d_total_ncf_batch);
+      DimCompute(&dimgrd, &dimblk, nfft, d_proccnt);
+      InvNormalize2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_batch, nfft, nfft, d_proccnt, delta);
+      CUDACHECK(cudaMemcpy(ncf_buffer + (all_finishcnt + d_finishcnt) * nfft, d_total_ncf_batch, d_proccnt * nfft * sizeof(float), cudaMemcpyDeviceToHost));
+      
+      // NOTE: here cuda_calc finished
+      for(size_t i = 0; i < d_proccnt; i++) {
+        SHAREDITEM *ptr = pItem + globalidx_batch;
+        pthread_mutex_lock(&(ptr->mtx));
+        if (ptr->valid == -1) {
+          ptr->phead = &((pPairList + globalidx_batch)->headncf);
+          ptr->pdata = ncf_buffer + (all_finishcnt + d_finishcnt + i) * nfft + nspec - nhalfcc - 1;
+          ptr->valid = 0;
         }
-        cufftExecC2R(plan, (cufftComplex *)d_total_ncf_spectrum_batch, (cufftReal *)d_total_ncf_batch);
-        DimCompute(&dimgrd, &dimblk, nfft, d_proccnt);
-        InvNormalize2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_batch, nfft, nfft, d_proccnt, delta);
-        CUDACHECK(cudaMemcpy(ncf_buffer + (all_finishcnt + d_finishcnt) * nfft, d_total_ncf_batch, d_proccnt * nfft * sizeof(float), cudaMemcpyDeviceToHost));
-
-        
-        // ------------------------------------------------------------------------------------------
-        // tag: for debug, check d_total_ncf_spectrum_batch, d_total_ncf_batch
-        complex* d_total_ncf_spectrum_batch_copy = (complex*)malloc(d_proccnt * nfft * sizeof(complex));
-        float* d_total_ncf_batch_copy = (float*)malloc(d_proccnt * nfft * sizeof(float));
-        CUDACHECK(cudaMemcpy(d_total_ncf_spectrum_batch_copy, d_total_ncf_spectrum_batch, d_proccnt * nfft * sizeof(complex), cudaMemcpyDeviceToHost));
-        CUDACHECK(cudaMemcpy(d_total_ncf_batch_copy, d_total_ncf_batch, d_proccnt * nfft * sizeof(float), cudaMemcpyDeviceToHost));
-        // ------------------------------------------------------------------------------------------
-
-        
-        // NOTE: here cuda_calc finished
-        for(size_t i = 0; i < d_proccnt; i++) {
-          SHAREDITEM *ptr = pItem + globalidx_batch;
-          pthread_mutex_lock(&(ptr->mtx));
-          if (ptr->valid == -1) {
-            ptr->phead = &((pPairList + globalidx_batch)->headncf);
-            ptr->pdata = ncf_buffer + (all_finishcnt + d_finishcnt + i) * nfft + nspec - nhalfcc - 1;
-            ptr->valid = 0;
-          }
-          pthread_mutex_unlock(&(ptr->mtx));
-          globalidx_batch++;
-        }
-
-        d_finishcnt += d_proccnt;
+        pthread_mutex_unlock(&(ptr->mtx));
+        globalidx_batch++;
       }
 
-      // tag: xc_end_time
-      clock_gettime(CLOCK_MONOTONIC, &xc_end_time);
-      double elapsed_xc_time = (xc_end_time.tv_sec - xc_start_time.tv_sec) +
-                        (xc_end_time.tv_nsec - xc_start_time.tv_nsec) / 1e9;
-      xc_time[gpu_batch] = elapsed_xc_time;
+      d_finishcnt += d_proccnt;
     }
+
+    // tag: xc_end_time
+    clock_gettime(CLOCK_MONOTONIC, &xc_end_time);
+    double elapsed_xc_time = (xc_end_time.tv_sec - xc_start_time.tv_sec) +
+                      (xc_end_time.tv_nsec - xc_start_time.tv_nsec) / 1e9;
+    xc_time[gpu_batch] = elapsed_xc_time;
+    
 
     all_finishcnt += current_batch_size;
   }
@@ -743,13 +723,6 @@ int main(int argc, char **argv)
   CpuFree((void **)&pSpecSrcList);
   CpuFree((void **)&pSpecStaList);
   CpuFree((void **)&pPairList);
-
-  /* Free cpu memory */
-  // GpuFree((void **)&d_src_spectrum);
-  // GpuFree((void **)&d_sta_spectrum);
-  // GpuFree((void **)&d_segment_ncf_spectrum);
-  // GpuFree((void **)&d_total_ncf_spectrum);
-  // GpuFree((void **)&d_total_ncf);
 
   // Free gpu memory for each batch
   GpuFree((void **)&d_src_spectrum_batch);
