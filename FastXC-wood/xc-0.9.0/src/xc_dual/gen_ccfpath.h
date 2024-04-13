@@ -23,4 +23,6 @@ void GenCCFPath(char *ccf_path, char *src_path, char *sta_path, char *output_dir
 
 char *GetNcfPath(char *src_path, char *sta_path, char *output_dir);
 
+char *GetEachNcfPath(char *src_path, char *sta_path, char *output_dir);
+
 #endif

@@ -36,15 +36,6 @@ pthread_mutex_t g_paramlock = PTHREAD_MUTEX_INITIALIZER;
 size_t g_batchload = 0;
 size_t g_totalload = 0;
 
-// NOTE: sharedItem
-typedef struct
-{
-  pthread_mutex_t mtx;
-  int valid; /* -1: default; 1: ready to file; 2: finish to file */
-  char fname[PATH_MAX];
-  SACHEAD *phead;
-  float *pdata;
-} SHAREDITEM;
 
 int create_parent_dir(const char *path)
 {
@@ -65,6 +56,7 @@ int create_parent_dir(const char *path)
     return 0;
 }
 
+/*
 //  pthread_mutex_t g_paramlock;
 void *writethrd(void *arg)
 {
@@ -173,52 +165,14 @@ void *writethrd_onlyOnePair(void *arg)
   
   return NULL;
 }
-
-// NOTE: write all ncf.sac into just one file
-int write_multiple_sac(const char *filename, SHAREDITEM *pItem, int paircnt) {
-    FILE *fp = fopen(filename, "wb");
-    if (fp == NULL) {
-        fprintf(stderr, "Error opening file %s for writing ncf.sac!\n", filename);
-        return -1;
-    }
-
-    for (int i = 0; i < paircnt; i++) {
-      SHAREDITEM *ptr = pItem + i;
-      // printf("npts = %d, delta = %f\n", ptr->phead->npts, ptr->phead->delta);
-      // 写入SAC头部信息
-      if (fwrite(ptr->phead, sizeof(SACHEAD), 1, fp) != 1) {
-          fprintf(stderr, "Error writing SAC header for item %d.\n", i);
-          fclose(fp);
-          return -1;
-      }
-
-      // 写入SAC数据
-      int data_size = ptr->phead->npts * sizeof(float); // 计算数据大小
-      if (fwrite(ptr->pdata, data_size, 1, fp) != 1) {
-          fprintf(stderr, "Error writing SAC data for item %d.\n", i);
-          fclose(fp);
-          return -1;
-      }
-    }
-
-    // 使用ftell获取文件大小
-    long filesize = ftell(fp);
-    if (filesize == -1) {
-        fprintf(stderr, "Error determining file size.\n");
-        fclose(fp);
-        return -1;
-    } else {
-        double filesizeGB = filesize / (double)(1 << 30); // 转换为GB
-        printf("[INFO]: File size: %.3f GB.\n", filesizeGB);
-    }
-
-    fclose(fp);
-    return 0;
-}
+*/
 
 int main(int argc, char **argv)
 {
-  
+  // tag: starttime
+  struct timespec start_time, end_time;
+  clock_gettime(CLOCK_MONOTONIC, &start_time);
+
   ARGUTYPE argument;
   ArgumentProcess(argc, argv, &argument);
   ARGUTYPE *parg = &argument;
@@ -454,7 +408,7 @@ int main(int argc, char **argv)
   
   /* Alloc gpu static memory */
   // cufft handle
-  cufftHandle plan;
+  cufftHandle plan, c2c_plan;
   int rank = 1;
   int n[1] = {nfft};
   int inembed[1] = {nfft};
@@ -503,10 +457,7 @@ int main(int argc, char **argv)
   // tag: for debug, check d_batch
   printf("[INFO]: d_batch: %ld\n", d_batch);
 
-  // tag: starttime, gpu_alloc_start_time
-  struct timespec start_time, end_time;
-  clock_gettime(CLOCK_MONOTONIC, &start_time);
-
+  // tag: gpu_alloc_start_time
   struct timespec gpu_alloc_start_time, gpu_alloc_end_time;
   clock_gettime(CLOCK_MONOTONIC, &gpu_alloc_start_time);
 
@@ -524,11 +475,18 @@ int main(int argc, char **argv)
 
   /* Alloc gpu dynamic memory with d_batch */
   CufftPlanAlloc(&plan, rank, n, inembed, istride, idist, onembed, ostride, odist, type, d_batch);
+  // CufftPlanAlloc(&c2c_plan, 1, n, NULL, 1, 1, NULL, 1, 1, CUFFT_C2C, d_batch);
 
   GpuMalloc((void **)&d_pairlist_batch, d_batch * sizeof(PAIRNODE));
   GpuMalloc((void **)&d_segment_ncf_spectrum_batch, d_batch * nfft * sizeof(complex));
   GpuMalloc((void **)&d_total_ncf_spectrum_batch, d_batch * nfft * sizeof(complex));
   GpuMalloc((void **)&d_total_ncf_batch, d_batch * nfft * sizeof(float));
+
+  cuComplex *d_total_ncf_spectrum_batch_hilbert = NULL;
+  cuComplex *hilbert_buffer = NULL;
+  GpuMalloc((void **)&d_total_ncf_spectrum_batch_hilbert, d_batch * nfft * sizeof(cuComplex));
+  GpuMalloc((void **)&hilbert_buffer, paircnt * nfft * sizeof(cuComplex));
+  CUDACHECK(cudaMemset(hilbert_buffer, 0, paircnt * nfft * sizeof(cuComplex)));
 
   // tag: for debug, check each's size
   printf("[INFO]: d_src_spectrum_batch: %.5f GB\n", (float)batch_data_unit_count * vec_size / (1024 * 1024 * 1024));
@@ -541,9 +499,10 @@ int main(int argc, char **argv)
 
   // tag: gpu_alloc_end_time
   clock_gettime(CLOCK_MONOTONIC, &gpu_alloc_end_time);
-  double elapsed_gpu_alloc_time = (gpu_alloc_end_time.tv_sec - gpu_alloc_start_time.tv_sec) +
-                      (gpu_alloc_end_time.tv_nsec - gpu_alloc_start_time.tv_nsec) / 1e9;
+  double elapsed_gpu_alloc_time = getElapsedTime(gpu_alloc_start_time, gpu_alloc_end_time);
   
+  int B_SIZE = 1024;
+  int G_SIZE = (paircnt * nfft + B_SIZE - 1) / B_SIZE;
 
   printf("[INFO]: -----------------------------GPU Alloc Finish-----------------------------------------\n");
 
@@ -579,10 +538,6 @@ int main(int argc, char **argv)
                           d_proccnt * sizeof(PAIRNODE),
                           cudaMemcpyHostToDevice));
 
-      // tag: for debug, check d_pairlist_batch
-      PAIRNODE* d_pairlist_batch_copy = (PAIRNODE*)malloc(d_proccnt * sizeof(PAIRNODE));
-      CUDACHECK(cudaMemcpy(d_pairlist_batch_copy, d_pairlist_batch, d_proccnt * sizeof(PAIRNODE), cudaMemcpyDeviceToHost));
-      
       CUDACHECK(cudaMemset(d_total_ncf_spectrum_batch, 0, d_batch * nfft * sizeof(cuComplex)));
       dim3 dimgrd, dimblk;
       DimCompute(&dimgrd, &dimblk, nspec, d_proccnt);
@@ -600,6 +555,12 @@ int main(int argc, char **argv)
 
         csum2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_spectrum_batch, nfft, d_segment_ncf_spectrum_batch, nfft, nspec, d_proccnt, nstep);
       }
+
+      // ----------------------- Hilbert Transform --------------------------------
+      CUDACHECK(cudaMemcpy(hilbert_buffer + (all_finishcnt + d_finishcnt) * nfft, d_total_ncf_spectrum_batch, d_proccnt * nfft * sizeof(cuComplex), cudaMemcpyDeviceToDevice));
+      
+      // ----------------------- Hilbert Transform --------------------------------
+
       cufftExecC2R(plan, (cufftComplex *)d_total_ncf_spectrum_batch, (cufftReal *)d_total_ncf_batch);
       DimCompute(&dimgrd, &dimblk, nfft, d_proccnt);
       InvNormalize2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_batch, nfft, nfft, d_proccnt, delta);
@@ -612,6 +573,11 @@ int main(int argc, char **argv)
         if (ptr->valid == -1) {
           ptr->phead = &((pPairList + globalidx_batch)->headncf);
           ptr->pdata = ncf_buffer + (all_finishcnt + d_finishcnt + i) * nfft + nspec - nhalfcc - 1;
+          char *ncf_fileName = GetEachNcfPath(pSpecSrcList[(pPairList + globalidx_batch)->srcidx].filepath,
+                                  pSpecStaList[(pPairList + globalidx_batch)->staidx].filepath,
+                                  ncf_dir);
+          strcpy(ptr->fname, ncf_fileName);
+          
           ptr->valid = 0;
         }
         pthread_mutex_unlock(&(ptr->mtx));
@@ -623,14 +589,60 @@ int main(int argc, char **argv)
 
     // tag: xc_end_time
     clock_gettime(CLOCK_MONOTONIC, &xc_end_time);
-    double elapsed_xc_time = (xc_end_time.tv_sec - xc_start_time.tv_sec) +
-                      (xc_end_time.tv_nsec - xc_start_time.tv_nsec) / 1e9;
+    double elapsed_xc_time = getElapsedTime(xc_start_time, xc_end_time);
     xc_time[gpu_batch] = elapsed_xc_time;
     
 
     all_finishcnt += current_batch_size;
   }
 
+  // ----------------------------- PWS Stack --------------------------------
+  struct timespec start_pws_stack_time, end_pws_stack_time;
+  clock_gettime(CLOCK_MONOTONIC, &start_pws_stack_time);
+
+  Print_Complex<<<1,1>>>(hilbert_buffer, nfft * paircnt);
+  cufftPlanMany(&c2c_plan, 1, &nfft, NULL, 1, 1, NULL, 1, 1, CUFFT_C2C, paircnt);
+  HibertTransform_Spectrum(hilbert_buffer, nfft, paircnt, G_SIZE, B_SIZE, c2c_plan);
+  cudaDeviceSynchronize();
+  Print_Complex<<<1,1>>>(hilbert_buffer, nfft * paircnt);
+
+  cuComplex *hilbert_buffer_after;
+  CpuMalloc((void **)&hilbert_buffer_after, paircnt * nfft * sizeof(cuComplex));
+  CUDACHECK(cudaMemcpy(hilbert_buffer_after, hilbert_buffer, paircnt * nfft * sizeof(cuComplex), cudaMemcpyDeviceToHost));
+
+  float *d_mean_amp, *d_weighted_amp;
+  GpuMalloc((void **)&d_mean_amp, nfft * sizeof(float));
+  GpuMalloc((void **)&d_weighted_amp, nfft * sizeof(float));
+  
+  cudaPwsStack(hilbert_buffer, nfft, paircnt, d_mean_amp, d_weighted_amp, G_SIZE, B_SIZE);
+
+  float *h_mean_amp, *h_weighted_amp;
+  CpuMalloc((void **)&h_mean_amp, nfft * sizeof(float));
+  CpuMalloc((void **)&h_weighted_amp, nfft * sizeof(float));
+  CUDACHECK(cudaMemcpy(h_mean_amp, d_mean_amp, nfft * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDACHECK(cudaMemcpy(h_weighted_amp, d_weighted_amp, nfft * sizeof(float), cudaMemcpyDeviceToHost));
+
+  clock_gettime(CLOCK_MONOTONIC, &end_pws_stack_time);
+  double elapsed_pws_stack_time = getElapsedTime(start_pws_stack_time, end_pws_stack_time);
+
+  float *h_mean_amp_halfcc, *h_weighted_amp_halfcc;
+  CpuMalloc((void **)&h_mean_amp_halfcc, npts * sizeof(float));
+  CpuMalloc((void **)&h_weighted_amp_halfcc, npts * sizeof(float));
+  CUDACHECK(cudaMemcpy(h_mean_amp_halfcc, d_mean_amp + nspec - nhalfcc - 1, npts * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDACHECK(cudaMemcpy(h_weighted_amp_halfcc, d_weighted_amp + nspec - nhalfcc - 1, npts * sizeof(float), cudaMemcpyDeviceToHost));
+
+  char *out_pws_sac = "/home/woodwood/hpc/station_2/z-test/stack_test_2year_sort/pws-sac/AAKH-ABNH.U-U.pws_mean.sac";
+  printf("[INFO]: out_pws_sac: %s\n", out_pws_sac);
+  if (create_parent_dir(out_pws_sac) == -1)
+  {
+    fprintf(stderr, "Error creating directory %s: ", dirname(out_pws_sac));
+    perror(NULL);
+    free(out_pws_sac);
+    return 1;
+  }
+  write_sac(out_pws_sac, hdstack, h_mean_amp_halfcc);
+  
+  // ----------------------------- PWS Stack --------------------------------
 
   // TODO: stack process
   // -----------------------------------------------------------------------------
@@ -658,8 +670,7 @@ int main(int argc, char **argv)
 
   // tag: end stack time
   clock_gettime(CLOCK_MONOTONIC, &end_stack_time);
-  double elapsed_stack_time = (end_stack_time.tv_sec - start_stack_time.tv_sec) +
-                      (end_stack_time.tv_nsec - start_stack_time.tv_nsec) / 1e9;
+  double elapsed_stack_time = getElapsedTime(start_stack_time, end_stack_time);
   
   hdstack.unused27 = nstack;
   // char *out_sac = "/home/woodwood/hpc/station_2/ncf_hinet_AAKH_ABNH/stack/AAKH-ABNH/AAKH-ABNH.U-U.sac";
@@ -692,8 +703,7 @@ int main(int argc, char **argv)
     }
     write_multiple_sac(ncf_filepath, pItem, paircnt);
     clock_gettime(CLOCK_MONOTONIC, &end_write_time);
-    double elapsed_write_time = (end_write_time.tv_sec - start_write_time.tv_sec) +
-                        (end_write_time.tv_nsec - start_write_time.tv_nsec) / 1e9;
+    double elapsed_write_time = getElapsedTime(start_write_time, end_write_time);
     printf("[INFO]: Write time: %.6f seconds\n", elapsed_write_time);
     printf("[INFO]: ---------------Finish Writing NCF file-----------------\n");
   }
@@ -702,8 +712,7 @@ int main(int argc, char **argv)
 
   // tag: endtime
   clock_gettime(CLOCK_MONOTONIC, &end_time);
-  double elapsed_time = (end_time.tv_sec - start_time.tv_sec) +
-                      (end_time.tv_nsec - start_time.tv_nsec) / 1e9;
+  double elapsed_time = getElapsedTime(start_time, end_time);
 
   for (size_t i = 0; i < paircnt; i++)
   {
@@ -732,9 +741,17 @@ int main(int argc, char **argv)
   GpuFree((void **)&d_total_ncf_spectrum_batch);
   GpuFree((void **)&d_total_ncf_batch);
 
+  // ----------------- Free gpu memory for pws_stack process -----------------
+  GpuFree((void **)&d_total_ncf_spectrum_batch_hilbert);
+  GpuFree((void **)&hilbert_buffer);
+
+  CpuFree((void **)&h_mean_amp);
+  CpuFree((void **)&h_weighted_amp);
+
   CUFFTCHECK(cufftDestroy(plan));
   freeFilePaths(pSrcPaths);
   freeFilePaths(pStaPaths);
+  // ----------------- Free gpu memory for pws_stack process -----------------
 
   printf("[INFO]: Gpu Alloc time: %.6f seconds\n", elapsed_gpu_alloc_time);
 
@@ -744,6 +761,8 @@ int main(int argc, char **argv)
     xc_time_sum += xc_time[i];
   }
   printf("[INFO]: XC time: %.6f seconds\n", xc_time_sum);
+
+  printf("[INFO]: PWS Stack time: %.6f seconds\n", elapsed_pws_stack_time);
 
   printf("[INFO]: Stack time: %.6f seconds\n", elapsed_stack_time);
 
