@@ -173,6 +173,9 @@ int main(int argc, char **argv)
   struct timespec start_time, end_time;
   clock_gettime(CLOCK_MONOTONIC, &start_time);
 
+  struct timespec start_readFile_time, end_readFile_time;
+  clock_gettime(CLOCK_MONOTONIC, &start_readFile_time);
+
   ARGUTYPE argument;
   ArgumentProcess(argc, argv, &argument);
   ARGUTYPE *parg = &argument;
@@ -312,6 +315,10 @@ int main(int argc, char **argv)
     ptr->valid = -1;
     pthread_mutex_unlock(&ptr->mtx);
   }
+
+  // tag: end_readFile_time
+  clock_gettime(CLOCK_MONOTONIC, &end_readFile_time);
+  double elapsed_readFile_time = getElapsedTime(start_readFile_time, end_readFile_time);
 
   // TODO: now we need stack process after xc, so we need more CPU memory
   // ---------------------------stack memory-------------------------------------------
@@ -483,10 +490,13 @@ int main(int argc, char **argv)
   GpuMalloc((void **)&d_total_ncf_batch, d_batch * nfft * sizeof(float));
 
   cuComplex *d_total_ncf_spectrum_batch_hilbert = NULL;
-  cuComplex *hilbert_buffer = NULL;
+  cuComplex *hilbert_buffer = NULL, *ncf_buffer_halfcc = NULL, *d_ncf_buffer_complex_d;
   GpuMalloc((void **)&d_total_ncf_spectrum_batch_hilbert, d_batch * nfft * sizeof(cuComplex));
   GpuMalloc((void **)&hilbert_buffer, paircnt * nfft * sizeof(cuComplex));
+  GpuMalloc((void **)&ncf_buffer_halfcc, paircnt * npts * sizeof(cuComplex));
+  GpuMalloc((void **)&d_ncf_buffer_complex_d, paircnt * nfft * sizeof(cuComplex));
   CUDACHECK(cudaMemset(hilbert_buffer, 0, paircnt * nfft * sizeof(cuComplex)));
+  CUDACHECK(cudaMemset(ncf_buffer_halfcc, 0, paircnt * npts * sizeof(cuComplex)));
 
   // tag: for debug, check each's size
   printf("[INFO]: d_src_spectrum_batch: %.5f GB\n", (float)batch_data_unit_count * vec_size / (1024 * 1024 * 1024));
@@ -558,14 +568,15 @@ int main(int argc, char **argv)
 
       // ----------------------- Hilbert Transform --------------------------------
       CUDACHECK(cudaMemcpy(hilbert_buffer + (all_finishcnt + d_finishcnt) * nfft, d_total_ncf_spectrum_batch, d_proccnt * nfft * sizeof(cuComplex), cudaMemcpyDeviceToDevice));
-      
+       
       // ----------------------- Hilbert Transform --------------------------------
 
       cufftExecC2R(plan, (cufftComplex *)d_total_ncf_spectrum_batch, (cufftReal *)d_total_ncf_batch);
       DimCompute(&dimgrd, &dimblk, nfft, d_proccnt);
       InvNormalize2DKernel<<<dimgrd, dimblk>>>(d_total_ncf_batch, nfft, nfft, d_proccnt, delta);
       CUDACHECK(cudaMemcpy(ncf_buffer + (all_finishcnt + d_finishcnt) * nfft, d_total_ncf_batch, d_proccnt * nfft * sizeof(float), cudaMemcpyDeviceToHost));
-      
+      CUDACHECK(cudaMemcpy2D(d_ncf_buffer_complex_d + (all_finishcnt + d_finishcnt) * nfft, 2 * sizeof(float), d_total_ncf_batch, 1 * sizeof(float), sizeof(float), d_proccnt * nfft, cudaMemcpyDeviceToDevice));
+
       // NOTE: here cuda_calc finished
       for(size_t i = 0; i < d_proccnt; i++) {
         SHAREDITEM *ptr = pItem + globalidx_batch;
@@ -596,19 +607,61 @@ int main(int argc, char **argv)
     all_finishcnt += current_batch_size;
   }
 
+  size_t gpu_avail_ram_before_xc = QueryAvailGpuRam(gpu_id);
+  GpuFree((void **)&d_src_spectrum_batch);
+  GpuFree((void **)&d_sta_spectrum_batch);
+  size_t gpu_avail_ram_after_xc = QueryAvailGpuRam(gpu_id);
   // ----------------------------- PWS Stack --------------------------------
   struct timespec start_pws_stack_time, end_pws_stack_time;
   clock_gettime(CLOCK_MONOTONIC, &start_pws_stack_time);
 
-  Print_Complex<<<1,1>>>(hilbert_buffer, nfft * paircnt);
+  // copy paircnt * npts cuComplex from ncf_buffer to ncf_buffer_halfcc
+  // struct timespec start_cpy1_time, end_cpy1_time;
+  // clock_gettime(CLOCK_MONOTONIC, &start_cpy1_time);
+  // cuComplex *ncf_buffer_complex;
+  // GpuMalloc((void **)&ncf_buffer_complex, paircnt * nfft * sizeof(cuComplex));
+  // CUDACHECK(cudaMemcpy2D(ncf_buffer_complex, 2 * sizeof(float), ncf_buffer, 1 * sizeof(float), sizeof(float), paircnt * nfft, cudaMemcpyHostToDevice));
+  // clock_gettime(CLOCK_MONOTONIC, &end_cpy1_time);
+  // double elapsed_cpy1_time = getElapsedTime(start_cpy1_time, end_cpy1_time);
+
+  cuComplex *ncf_buffer_complex_halfcc;
+  GpuMalloc((void **)&ncf_buffer_complex_halfcc, paircnt * npts * sizeof(cuComplex));
+  size_t dst_pitch = npts * sizeof(cuComplex);
+  size_t src_pitch = nfft * sizeof(float);
+  size_t width = npts * sizeof(cuComplex);
+  size_t height = paircnt;
+  CUDACHECK(cudaMemcpy2D(ncf_buffer_complex_halfcc, dst_pitch, d_ncf_buffer_complex_d + (nspec - nhalfcc - 1), src_pitch, width, height, cudaMemcpyDeviceToDevice));
+
+  cufftHandle c2c_plan_npts;
+  cufftPlanMany(&c2c_plan_npts, 1, &npts, NULL, 1, 1, NULL, 1, 1, CUFFT_C2C, paircnt);
+
+  struct timespec start_hilbert_time, end_hilbert_time;
+  clock_gettime(CLOCK_MONOTONIC, &start_hilbert_time);
+  HibertTransform(ncf_buffer_complex_halfcc, npts, paircnt, G_SIZE, B_SIZE, c2c_plan_npts);
+  clock_gettime(CLOCK_MONOTONIC, &end_hilbert_time);
+  double elapsed_hilbert_time = getElapsedTime(start_hilbert_time, end_hilbert_time);
+
+  float *d_mean_amp_npts, *d_weighted_amp_npts;
+  GpuMalloc((void **)&d_mean_amp_npts, npts * sizeof(float));
+  GpuMalloc((void **)&d_weighted_amp_npts, npts * sizeof(float));
+  struct timespec start_pws_time, end_pws_time;
+  clock_gettime(CLOCK_MONOTONIC, &start_pws_time);
+  cudaPwsStack(ncf_buffer_complex_halfcc, npts, paircnt, d_mean_amp_npts, d_weighted_amp_npts, G_SIZE, B_SIZE);
+  clock_gettime(CLOCK_MONOTONIC, &end_pws_time);
+  double elapsed_pws_time = getElapsedTime(start_pws_time, end_pws_time);
+
+  float *h_mean_amp_npts, *h_weighted_amp_npts;
+  CpuMalloc((void **)&h_mean_amp_npts, npts * sizeof(float));
+  CpuMalloc((void **)&h_weighted_amp_npts, npts * sizeof(float));
+  CUDACHECK(cudaMemcpy(h_mean_amp_npts, d_mean_amp_npts, npts * sizeof(float), cudaMemcpyDeviceToHost));
+  CUDACHECK(cudaMemcpy(h_weighted_amp_npts, d_weighted_amp_npts, npts * sizeof(float), cudaMemcpyDeviceToHost));
+
+  /*
+  // Print_Complex<<<1,1>>>(hilbert_buffer, nfft * paircnt);
   cufftPlanMany(&c2c_plan, 1, &nfft, NULL, 1, 1, NULL, 1, 1, CUFFT_C2C, paircnt);
   HibertTransform_Spectrum(hilbert_buffer, nfft, paircnt, G_SIZE, B_SIZE, c2c_plan);
   cudaDeviceSynchronize();
-  Print_Complex<<<1,1>>>(hilbert_buffer, nfft * paircnt);
-
-  cuComplex *hilbert_buffer_after;
-  CpuMalloc((void **)&hilbert_buffer_after, paircnt * nfft * sizeof(cuComplex));
-  CUDACHECK(cudaMemcpy(hilbert_buffer_after, hilbert_buffer, paircnt * nfft * sizeof(cuComplex), cudaMemcpyDeviceToHost));
+  // Print_Complex<<<1,1>>>(hilbert_buffer, nfft * paircnt);
 
   float *d_mean_amp, *d_weighted_amp;
   GpuMalloc((void **)&d_mean_amp, nfft * sizeof(float));
@@ -630,17 +683,24 @@ int main(int argc, char **argv)
   CpuMalloc((void **)&h_weighted_amp_halfcc, npts * sizeof(float));
   CUDACHECK(cudaMemcpy(h_mean_amp_halfcc, d_mean_amp + nspec - nhalfcc - 1, npts * sizeof(float), cudaMemcpyDeviceToHost));
   CUDACHECK(cudaMemcpy(h_weighted_amp_halfcc, d_weighted_amp + nspec - nhalfcc - 1, npts * sizeof(float), cudaMemcpyDeviceToHost));
+  */
+  clock_gettime(CLOCK_MONOTONIC, &end_pws_stack_time);
+  double elapsed_pws_stack_time = getElapsedTime(start_pws_stack_time, end_pws_stack_time);
 
-  char *out_pws_sac = "/home/woodwood/hpc/station_2/z-test/stack_test_2year_sort/pws-sac/AAKH-ABNH.U-U.pws_mean.sac";
+  char *out_pws_sac = "/home/woodwood/hpc/station_2/z-test/stack_test_2year_sort/pws-sac/AAKH-ABNH.U-U.pws.sac";
+  char *out_pws_mean_sac = "/home/woodwood/hpc/station_2/z-test/stack_test_2year_sort/pws-sac/AAKH-ABNH.U-U.pws_mean.sac";
   printf("[INFO]: out_pws_sac: %s\n", out_pws_sac);
-  if (create_parent_dir(out_pws_sac) == -1)
+  printf("[INFO]: out_pws_mean_sac: %s\n", out_pws_mean_sac);
+  if (create_parent_dir(out_pws_sac) == -1 || create_parent_dir(out_pws_mean_sac) == -1)
   {
     fprintf(stderr, "Error creating directory %s: ", dirname(out_pws_sac));
     perror(NULL);
     free(out_pws_sac);
+    free(out_pws_mean_sac);
     return 1;
   }
-  write_sac(out_pws_sac, hdstack, h_mean_amp_halfcc);
+  write_sac(out_pws_mean_sac, hdstack, h_mean_amp_npts);
+  write_sac(out_pws_sac, hdstack, h_weighted_amp_npts);
   
   // ----------------------------- PWS Stack --------------------------------
 
@@ -734,8 +794,8 @@ int main(int argc, char **argv)
   CpuFree((void **)&pPairList);
 
   // Free gpu memory for each batch
-  GpuFree((void **)&d_src_spectrum_batch);
-  GpuFree((void **)&d_sta_spectrum_batch);
+  // GpuFree((void **)&d_src_spectrum_batch);
+  // GpuFree((void **)&d_sta_spectrum_batch);
   GpuFree((void **)&d_pairlist_batch);
   GpuFree((void **)&d_segment_ncf_spectrum_batch);
   GpuFree((void **)&d_total_ncf_spectrum_batch);
@@ -744,14 +804,25 @@ int main(int argc, char **argv)
   // ----------------- Free gpu memory for pws_stack process -----------------
   GpuFree((void **)&d_total_ncf_spectrum_batch_hilbert);
   GpuFree((void **)&hilbert_buffer);
+  GpuFree((void **)&ncf_buffer_halfcc);
+  // GpuFree((void **)&ncf_buffer_complex);
+  GpuFree((void **)&ncf_buffer_complex_halfcc);
+  GpuFree((void **)&d_mean_amp_npts);
+  GpuFree((void **)&d_weighted_amp_npts);
 
-  CpuFree((void **)&h_mean_amp);
-  CpuFree((void **)&h_weighted_amp);
+  CpuFree((void **)&h_mean_amp_npts);
+  CpuFree((void **)&h_weighted_amp_npts);
+
+  // CpuFree((void **)&h_mean_amp);
+  // CpuFree((void **)&h_weighted_amp);
 
   CUFFTCHECK(cufftDestroy(plan));
   freeFilePaths(pSrcPaths);
   freeFilePaths(pStaPaths);
   // ----------------- Free gpu memory for pws_stack process -----------------
+
+  printf("[INFO]: -----------------------------End of Program-----------------------------------------\n");
+  printf("[INFO]: Read File time: %.6f seconds\n", elapsed_readFile_time);
 
   printf("[INFO]: Gpu Alloc time: %.6f seconds\n", elapsed_gpu_alloc_time);
 
@@ -763,6 +834,12 @@ int main(int argc, char **argv)
   printf("[INFO]: XC time: %.6f seconds\n", xc_time_sum);
 
   printf("[INFO]: PWS Stack time: %.6f seconds\n", elapsed_pws_stack_time);
+
+  // printf("[INFO]: cpy1 time: %.6f seconds\n", elapsed_cpy1_time);
+
+  printf("[INFO]: Hilbert Transform time: %.6f seconds\n", elapsed_hilbert_time);
+
+  printf("[INFO]: pws time: %.6f seconds\n", elapsed_pws_time);
 
   printf("[INFO]: Stack time: %.6f seconds\n", elapsed_stack_time);
 
