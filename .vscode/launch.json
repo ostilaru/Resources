@@ -51,5 +51,32 @@
         // "miDebuggerPath": "/usr/local/cuda/bin/cuda-gdb"
         "miDebuggerPath": "/usr/bin/gdb" // 根据你的系统路径调整
     },
+    {
+        "name": "Debug one_year xc_dual CUDA Program",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "/home/woodwood/hpc/Resources/FastXC-wood/xc-0.9.0/bin/spec_xc_dual",
+        "args": [
+            "-A", "/home/woodwood/hpc/station_2/z-test/specList_0.9.4/specList_array1.txt",
+            "-B", "/home/woodwood/hpc/station_2/z-test/specList_0.9.4/specList_array2.txt",
+            "-O", "/home/woodwood/hpc/station_2/z-test/stack_test_1year/ncf",
+            "-S", "/home/woodwood/hpc/station_2/z-test/stack_test_1year",
+            "-C", "500"
+        ],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}",
+        "environment": [],    
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ],
+        // "miDebuggerPath": "/usr/local/cuda/bin/cuda-gdb"
+        "miDebuggerPath": "/usr/bin/gdb" // 根据你的系统路径调整
+    }
   ]
 }

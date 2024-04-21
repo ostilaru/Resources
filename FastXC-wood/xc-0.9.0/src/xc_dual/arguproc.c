@@ -76,3 +76,45 @@ char *createFilePath(const char *stack_dir, const char *sta_pair, const char *ba
     return NULL;
   }
 }
+
+char *createPwsMeanFilePath(const char *stackdir, const char *sta_pair, const char *base_name) {
+  // find the last dot in base_name
+  const char *last_dot = strrchr(base_name, '.');
+
+  // tag: for debug, check for sta_pair
+  printf("sta_pair_IN: %s\n", sta_pair);
+  
+  if (last_dot != NULL) {
+    size_t path_len = strlen(stackdir) + 1 + strlen(sta_pair) + 1 + strlen(base_name) + strlen(".pws_mean") + 1;
+    char *stack_path = (char *)malloc(path_len);
+
+    // Adjusted snprintf to include ".pws" before the last_dot
+    snprintf(stack_path, path_len, "%s/%s/%.*s.pws_mean%s", stackdir, sta_pair, (int)(last_dot - base_name), base_name, last_dot);
+
+    return stack_path;
+  } else {
+    fprintf(stderr, "Error: No dot found in base_name\n");
+    return NULL;
+  }
+}
+
+char *createPwsWeightedFilePath(const char *stackdir, const char *sta_pair, const char *base_name) {
+  // find the last dot in base_name
+  const char *last_dot = strrchr(base_name, '.');
+
+  // tag: for debug, check for sta_pair
+  printf("sta_pair_IN: %s\n", sta_pair);
+  
+  if (last_dot != NULL) {
+    size_t path_len = strlen(stackdir) + 1 + strlen(sta_pair) + 1 + strlen(base_name) + strlen(".pws_weighted") + 1;
+    char *stack_path = (char *)malloc(path_len);
+
+    // Adjusted snprintf to include ".pws" before the last_dot
+    snprintf(stack_path, path_len, "%s/%s/%.*s.pws_weighted%s", stackdir, sta_pair, (int)(last_dot - base_name), base_name, last_dot);
+
+    return stack_path;
+  } else {
+    fprintf(stderr, "Error: No dot found in base_name\n");
+    return NULL;
+  }
+}

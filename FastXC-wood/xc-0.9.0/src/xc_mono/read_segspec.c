@@ -24,13 +24,13 @@ complex *read_spec_buffer(char *name, SEGSPEC *hd, complex *buffer)
 
   /* read whole segment spectrum in
    * Total size is nseg*nspec*sizeof(our_float_complex) */
-  size = sizeof(complex) * hd->nspec * hd->nstep;
+  // size = sizeof(complex) * hd->nspec * hd->nstep;
 
-  if (fread((char *)buffer, size, 1, strm) != 1)
-  {
-    fprintf(stderr, "Error in reading SEGSPEC data %s\n", name);
-    return NULL;
-  }
+  // if (fread((char *)buffer, size, 1, strm) != 1)
+  // {
+  //   fprintf(stderr, "Error in reading SEGSPEC data %s\n", name);
+  //   return NULL;
+  // }
   
 
   fclose(strm);

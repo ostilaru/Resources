@@ -27,5 +27,7 @@ typedef struct ARGUTYPE
 void usage();
 void ArgumentProcess(int argc, char **argv, ARGUTYPE *pargument);
 char *createFilePath(const char *stack_dir, const char *sta_pair, const char *base_name);
+char *createPwsMeanFilePath(const char *stackdir, const char *sta_pair, const char *base_name);
+char *createPwsWeightedFilePath(const char *stackdir, const char *sta_pair, const char *base_name);
 
 #endif
